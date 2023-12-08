@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from '../Guards/RoleGuard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { PersonalDataModule } from './personal-data/personal-data.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
     }),
     AuthModule,
     UserModule,
+    PersonalDataModule,
   ],
   controllers: [AppController],
   providers: [
