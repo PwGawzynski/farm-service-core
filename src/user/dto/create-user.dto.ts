@@ -1,4 +1,5 @@
 import {
+  IsDefined,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -6,7 +7,11 @@ import {
   IsString,
   IsStrongPassword,
   Length,
+  ValidateNested,
 } from 'class-validator';
+import { UserRole } from '../../../FarmServiceApiTypes/User/Enums';
+import { CreatePersonalDataDto } from '../../personal-data/dto/create-personal-data.dto';
+import { Type } from 'class-transformer';
 
 /**
  * DTO used to specify JSON data body, and validate its payload, when Create user ask
@@ -40,6 +45,11 @@ export class CreateUserDto {
     minSymbols: 1,
   })
   password: string;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => CreatePersonalDataDto)
+  personal_data: CreatePersonalDataDto;
 
   @IsOptional()
   @IsEnum(UserRole)
