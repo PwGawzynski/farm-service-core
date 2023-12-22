@@ -12,6 +12,7 @@ import {
 import { UserRole } from '../../../FarmServiceApiTypes/User/Enums';
 import { CreatePersonalDataDto } from '../../personal-data/dto/create-personal-data.dto';
 import { Type } from 'class-transformer';
+import { CreateAddressDto } from '../../address/dto/create-address.dto';
 
 /**
  * DTO used to specify JSON data body, and validate its payload, when Create user ask
@@ -50,6 +51,11 @@ export class CreateUserDto {
   @ValidateNested()
   @Type(() => CreatePersonalDataDto)
   personal_data: CreatePersonalDataDto;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => CreateAddressDto)
+  address: CreateAddressDto;
 
   @IsOptional()
   @IsEnum(UserRole)
