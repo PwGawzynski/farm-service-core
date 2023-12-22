@@ -14,6 +14,7 @@ import { RolesGuard } from '../Guards/RoleGuard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { PersonalDataModule } from './personal-data/personal-data.module';
+import { AddressModule } from './address/address.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PersonalDataModule } from './personal-data/personal-data.module';
     AuthModule,
     UserModule,
     PersonalDataModule,
+    AddressModule,
   ],
   controllers: [AppController],
   providers: [
