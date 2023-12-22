@@ -12,6 +12,7 @@ import { RefreshToken } from '../../auth/entities/accessToken.entity';
 import { UserRole } from '../../../FarmServiceApiTypes/User/Enums';
 import { ConflictException } from '@nestjs/common';
 import { PersonalData } from '../../personal-data/entities/personalData.entity';
+import { Address } from '../../address/entities/address.entity';
 
 /**
  * Class represents User entity in db
@@ -51,7 +52,16 @@ export class User extends BaseEntity {
     nullable: false,
   })
   @JoinColumn({ name: 'personal_data' })
-  personalData: Promise<User>;
+  personalData: Promise<PersonalData>;
+
+  @OneToOne(() => Address, (address) => address.user, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
+  @JoinColumn({
+    name: 'user_address_id',
+  })
+  address: Promise<Address>;
 
   /**
    * Checks if entity already exist in db
