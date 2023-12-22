@@ -118,6 +118,7 @@ export class AuthService {
       deviceId: uuid(),
       refreshTokenId,
     } as RefreshTokenPayload;
+    //TODO swap to config
     return Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('secretSign'),
@@ -130,6 +131,19 @@ export class AuthService {
         ),
       }),
     ]);
+  }
+
+  async checkDeviceId(plainDeviceId: string, hashed: string) {
+    return bcrypt
+      .compare(plainDeviceId, hashed)
+      .then((result) => {
+        console.log(result, hashed);
+        if (result) return hashed;
+        return false;
+      })
+      .catch((e) => {
+        throw e;
+      });
   }
 
   /**
@@ -171,20 +185,36 @@ export class AuthService {
    * @throws HttpException in case operation failure
    */
   async refreshToken(req: Request) {
-    const validUser = await this.userService.findOneById(req.user['id']);
+    console.log(req.user, 'REF_TOK');
+    const validUser = await this.userService.findOneById(req.user['userId']);
     if (!validUser)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const account = await validUser.account;
 
-    const oldToken = req.user['refreshToken'];
-    const oldTokenEntity = await RefreshToken.findOne({
+    const oldTokensEntity = await RefreshToken.find({
       where: {
-        id: oldToken.id,
+        user: { id: validUser['userId'] },
       },
     });
+    console.log(oldTokensEntity, 'OTSE');
+    const oldTokenEntity = (
+      await Promise.all(
+        oldTokensEntity.map((t) =>
+          this.checkDeviceId(req.user['refreshToken'], t.deviceId),
+        ),
+      )
+    ).find((result) => typeof result === 'string');
+
+    console.log(oldTokenEntity, 'OTE');
     if (!oldTokenEntity)
       throw new HttpException('Invalid Token', HttpStatus.UNAUTHORIZED);
-    oldTokenEntity.remove();
+    (
+      await RefreshToken.findOne({
+        where: {
+          deviceId: oldTokenEntity,
+        },
+      })
+    ).remove();
 
     const newTokenEntity = new RefreshToken();
     const [accessToken, refreshToken] = await this.createTokens(
