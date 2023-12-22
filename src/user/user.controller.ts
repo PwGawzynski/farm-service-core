@@ -66,4 +66,10 @@ export class UserController {
   async activate(@Param(':code') code: string) {
     return this.userService.activate(code);
   }
+
+  @Get('me')
+  @AllRoles()
+  async me(@GetUser() user: User) {
+    return this.userService.me(user);
+  }
 }
