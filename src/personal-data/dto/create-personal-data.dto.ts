@@ -30,4 +30,10 @@ export class CreatePersonalDataDto {
   })
   @Length(0, 13)
   phone_number: string;
+
+  *[Symbol.iterator]() {
+    yield this.name;
+    yield this.surname;
+    yield this.phone_number;
+  }
 }
