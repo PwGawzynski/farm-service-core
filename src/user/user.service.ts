@@ -24,6 +24,9 @@ import {
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { MailingService } from '../mailing/mailing.service';
+import { PersonalData } from '../personal-data/entities/personalData.entity';
+import { Address } from '../address/entities/address.entity';
+import { UserResponseDto } from './dto/response/user-response.dto';
 
 @Injectable()
 export class UserService {
@@ -101,19 +104,41 @@ export class UserService {
       activationCode: uuid(),
       password: await this.hashPwd(data.password),
     });
+    const newPersonalData = new PersonalData({
+      ...data.personal_data,
+      phoneNumber: data.personal_data.phone_number,
+    });
+    const newAddress = new Address({
+      ...data.address,
+    });
+
+    newUser.personalData = Promise.resolve(newPersonalData);
     newUser.account = Promise.resolve(newAccount);
+
     await newAccount._shouldNotExist(
       'email',
       'User with given emil is already registered',
     );
+    await newPersonalData._shouldNotExist(
+      'phoneNumber',
+      'Phone number is already registered',
+    );
+
+    await newAddress.save();
     await newAccount.save();
-    await newUser.save();
+    await newPersonalData.save();
+    newUser.address = Promise.resolve(newAddress);
     newAccount.user = Promise.resolve(newUser);
+    newPersonalData.user = Promise.resolve(newUser);
+    await newUser.save();
+    newAddress.user = Promise.resolve(newUser);
     /*
      * this is because of bidirectional relation one to one, first we must save
      * account entity  without user id then update it
      */
+    newAddress.save();
     newAccount.save();
+    newPersonalData.save();
 
     const accessEntity = new RefreshToken();
 
@@ -128,16 +153,15 @@ export class UserService {
     accessEntity.user = Promise.resolve(newUser);
     accessEntity.save();
 
-    await this.mailer.sendsMail({
+    /*await this.mailer.sendsMail({
       to: newAccount.email,
       template: 'activateNewAccount',
       subject: `Welcome on board, let's activate your account`,
       context: {
-        username:
-          'Jan Kowalski' /* `${newUserPersonalData.name} ${newUserPersonalData.surname}`*/,
+        username: `${newPersonalData.name} ${newPersonalData.surname}`,
         activateLink: `http://localhost:3006/user/activate/${newAccount.activationCode}`,
       },
-    });
+    });*/
 
     return {
       code: ResponseCode.ProcessedCorrect,
@@ -205,5 +229,20 @@ export class UserService {
     return {
       code: ResponseCode.ProcessedWithoutConfirmationWaiting,
     } as ResponseObject;
+  }
+
+  async me(user: User) {
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: new UserResponseDto({
+        ...user,
+        account: await user.account,
+        address: await user.address,
+        personal_data: {
+          ...(await user.personalData),
+          phone_number: (await user.personalData).phoneNumber,
+        },
+      }),
+    } as ResponseObject<UserResponseDto>;
   }
 }
