@@ -25,6 +25,7 @@ export class AuthController {
    * @param req express type request object taken by decorator
    * @return data object with access token and refresh token
    */
+  @Public()
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh')
   refreshToken(@Req() req: Request) {
