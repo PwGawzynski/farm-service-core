@@ -1,8 +1,6 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthTokenPayload } from '../../internalTypes/Auth/authToken';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { User } from '../user/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 
 /**
@@ -24,18 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
    * @param done fn. called when validation done
    * @throws UnauthorizedException if token is not validate
    */
-  async validate(payload: AuthTokenPayload, done: (error, user) => void) {
-    console.log(payload);
+  async validate(payload, done: (error, user) => void) {
     if (!payload || !payload.userId) done(new UnauthorizedException(), false);
-    const user = User.findOne({
-      where: {
-        id: payload.userId,
-      },
-    });
-    if (!user) {
-      console.warn('CAUSER DONT EXIST IN DB');
-      return done(new UnauthorizedException(), false);
-    }
-    return done(null, user);
+    return done(null, payload);
   }
 }
