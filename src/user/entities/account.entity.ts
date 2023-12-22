@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { ConflictException } from '@nestjs/common';
+import { Theme } from '../../../FarmServiceApiTypes/Account/Constants';
 /**
  * Class represents account data in db
  */
@@ -45,6 +46,13 @@ export class Account extends BaseEntity {
     nullable: false,
   })
   isActivated: boolean;
+
+  @Column({
+    enum: Theme,
+    type: 'enum',
+    default: Theme.dark,
+  })
+  theme?: Theme;
 
   @Column({
     type: 'varchar',
