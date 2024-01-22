@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,7 +26,7 @@ export class UserController {
    */
   @Post()
   @Public()
-  register(@Body() data: CreateUserDto) {
+  async register(@Body() data: CreateUserDto) {
     return this.userService.register(data);
   }
 
@@ -37,11 +38,17 @@ export class UserController {
    */
   @Put()
   @AllRoles()
-  updatePassword(
+  async updatePassword(
     @Body() updatePasswordData: UpdatePasswordDto,
     @GetUser() user: User,
   ) {
     return this.userService.updatePassword(updatePasswordData, user);
+  }
+
+  @Put('reset-password')
+  @Public()
+  async resetPassword(@Query('email') email: string) {
+    return this.userService.resetPassword(email);
   }
 
   /**
@@ -51,7 +58,7 @@ export class UserController {
    */
   @Delete()
   @AllRoles()
-  deleteAccount(@GetUser() user: User) {
+  async deleteAccount(@GetUser() user: User) {
     return this.userService.deleteAccount(user);
   }
 

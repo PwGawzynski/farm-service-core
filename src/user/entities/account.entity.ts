@@ -61,6 +61,13 @@ export class Account extends BaseEntity {
   })
   activationCode: string;
 
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: false,
+  })
+  resetPasswordToken: string;
+
   @OneToOne(() => User, (user) => user.account, { onDelete: 'NO ACTION' })
   @JoinColumn({
     name: 'user_id',

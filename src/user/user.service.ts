@@ -27,6 +27,7 @@ import { MailingService } from '../mailing/mailing.service';
 import { PersonalData } from '../personal-data/entities/personalData.entity';
 import { Address } from '../address/entities/address.entity';
 import { UserResponseDto } from './dto/response/user-response.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UserService {
@@ -244,5 +245,30 @@ export class UserService {
         },
       }),
     } as ResponseObject<UserResponseDto>;
+  }
+
+  async resetPassword(email: string) {
+    if (!email) throw new BadRequestException('BAD_EMAIL');
+    const user = await User.findOne({
+      where: { account: { email } },
+    });
+    console.log(user, email);
+    if (user) {
+      const resetToken = crypto.randomBytes(128).toString('hex');
+      const hashedToken = await bcrypt.hash(resetToken, 10);
+      (await user.account).resetPasswordToken = hashedToken;
+      this.mailer.sendsMail({
+        to: (await user.account).email,
+        template: 'resetPassword',
+        subject: `Welcome on board, let's activate your account`,
+        context: {
+          username: `${(await user.personalData).name}`,
+          activateLink: `http://localhost:3006/user/activate/${hashedToken}`,
+        },
+      });
+    }
+    return {
+      code: ResponseCode.ProcessedCorrect,
+    } as ResponseObject;
   }
 }
