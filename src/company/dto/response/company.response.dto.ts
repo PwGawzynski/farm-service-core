@@ -1,8 +1,8 @@
 import { Exclude, Expose } from 'class-transformer';
 import { AddressResponseDto } from '../../../address/dto/response/address.response.dto';
 
-class CompanyResponseWhiteList {
-  constructor(partial: Partial<CompanyResponseWhiteList>) {
+export class BaseCompanyResponseWhiteList {
+  constructor(partial: Partial<BaseCompanyResponseWhiteList>) {
     Object.assign(this, partial);
   }
   @Expose()
@@ -18,7 +18,7 @@ class CompanyResponseWhiteList {
 }
 
 @Exclude()
-export class CompanyResponseDto extends CompanyResponseWhiteList {
+export class CompanyResponseDto extends BaseCompanyResponseWhiteList {
   constructor(partial: Partial<CompanyResponseDto>) {
     super(partial);
     Object.assign(this, partial);
