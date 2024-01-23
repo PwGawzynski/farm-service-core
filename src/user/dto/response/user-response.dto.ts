@@ -5,7 +5,7 @@ import { PersonalDataResponseDto } from '../../../personal-data/dto/response/per
 import { AccountResponseDto } from './account.response';
 
 export class UserResponseWhiteListDto {
-  constructor(partial: Partial<UserResponseWhiteListDto>) {
+  constructor(partial: Partial<UserResponseDto>) {
     Object.assign(this, partial);
   }
   @Expose()
