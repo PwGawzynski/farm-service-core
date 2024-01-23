@@ -122,7 +122,7 @@ export class AuthService {
     return Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('secretSign'),
-        expiresIn: '15m',
+        expiresIn: this.configService.get<string>('accessTokenExpirationTime'),
       }),
       this.jwtService.signAsync(refreshPayload, {
         secret: this.configService.get<string>('refreshSign'),

@@ -51,7 +51,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
      * Now token is validated
      */
     const isTokenCorrect = await super.canActivate(context);
-    console.log(isTokenCorrect, 'tooo');
+
     /**
      * Then we check if action is mark by @AllowOnlyByToken()
      * if yes, we will skip finding user in db because action authed only by token
@@ -61,7 +61,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       JwtAuthGuard.IS_ALLOWED_FOR_ALL_USERS,
       [context.getHandler(), context.getClass()],
     );
-    console.log(isCreateUserAction, 'tessst');
 
     if (!isCreateUserAction) {
       const tokenUser = context.switchToHttp().getRequest().user;

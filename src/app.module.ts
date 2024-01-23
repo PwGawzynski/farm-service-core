@@ -15,6 +15,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { PersonalDataModule } from './personal-data/personal-data.module';
 import { AddressModule } from './address/address.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AddressModule } from './address/address.module';
     UserModule,
     PersonalDataModule,
     AddressModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [

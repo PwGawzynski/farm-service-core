@@ -74,7 +74,7 @@ export class Account extends BaseEntity {
   })
   user: Promise<User>;
 
-  async _shouldNotExist<T extends keyof Account>(key: T, conflictMsg: string) {
+  async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     const exist = await Account.findOne({
       where: {
         [key]: this[key],
