@@ -6,7 +6,7 @@ import { AccountResponseDto } from './account.response';
 import { CompanyResponseDto } from '../../../company/dto/response/company.response.dto';
 
 export class UserResponseWhiteListDto {
-  constructor(partial: Partial<UserResponseDto>) {
+  constructor(partial: Partial<UserResponseWhiteListDto>) {
     Object.assign(this, partial);
   }
   @Expose()
@@ -18,7 +18,7 @@ export class UserResponseWhiteListDto {
   @Expose()
   account: AccountResponseDto;
   @Expose()
-  company: CompanyResponseDto;
+  company?: CompanyResponseDto;
 }
 
 @Exclude()

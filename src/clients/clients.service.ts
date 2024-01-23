@@ -58,7 +58,7 @@ export class ClientsService {
       code: ResponseCode.ProcessedCorrect,
       payload: new ClientsResponseDto({
         user: new UserResponseDto({
-          ...registeredUser,
+          role: registeredUser.role,
           account: await registeredUser.account,
           address: await registeredUser.address,
           personal_data: new PersonalDataResponseDto(

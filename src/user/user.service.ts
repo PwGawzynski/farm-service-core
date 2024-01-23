@@ -31,6 +31,7 @@ import * as crypto from 'crypto';
 import { AccountResponseDto } from './dto/response/account.response';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
+import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
 
 @Injectable()
 export class UserService {
@@ -243,7 +244,10 @@ export class UserService {
         account: new AccountResponseDto(await user.account),
         address: new AddressResponseDto(await user.address),
         personal_data: new PersonalDataResponseDto(await user.personalData),
-
+        company: new CompanyResponseDto({
+          ...(await user.company),
+          address: new AddressResponseDto(await (await user.company).address),
+        }),
       }),
     } as ResponseObject<UserResponseDto>;
   }
