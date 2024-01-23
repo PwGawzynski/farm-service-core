@@ -243,6 +243,10 @@ export class UserService {
           ...(await user.personalData),
           phone_number: (await user.personalData).phoneNumber,
         },
+        company: {
+          ...(await user.company),
+          address: await (await user.company).address,
+        },
       }),
     } as ResponseObject<UserResponseDto>;
   }

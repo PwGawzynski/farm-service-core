@@ -45,7 +45,7 @@ export class CompanyService {
       code: ResponseCode.ProcessedCorrect,
       payload: new CompanyResponseDto({
         ...(await company),
-        address: new AddressResponseDto(await (await company).address),
+        address: await (await company).address,
       }),
     } as ResponseObject<CompanyResponseBase>;
   }
