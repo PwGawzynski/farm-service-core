@@ -39,4 +39,14 @@ export class CompanyService {
       }),
     } as ResponseObject<CompanyResponseBase>;
   }
+
+  async get(company: Company) {
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: new CompanyResponseDto({
+        ...(await company),
+        address: new AddressResponseDto(await (await company).address),
+      }),
+    } as ResponseObject<CompanyResponseBase>;
+  }
 }
