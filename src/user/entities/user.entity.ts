@@ -65,8 +65,10 @@ export class User extends BaseEntity {
   })
   address: Promise<Address>;
 
+
   @OneToOne(() => Client, (client) => client.user, { nullable: true })
   client: Promise<Client | null>;
+
 
   @OneToOne(() => Company, (company) => company.owner, { nullable: true })
   company: Promise<Company | null>;

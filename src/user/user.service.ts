@@ -243,6 +243,7 @@ export class UserService {
         account: new AccountResponseDto(await user.account),
         address: new AddressResponseDto(await user.address),
         personal_data: new PersonalDataResponseDto(await user.personalData),
+
       }),
     } as ResponseObject<UserResponseDto>;
   }

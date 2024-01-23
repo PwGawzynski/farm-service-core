@@ -3,6 +3,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { AddressResponseDto } from '../../../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../../../personal-data/dto/response/personalData-response.dto';
 import { AccountResponseDto } from './account.response';
+import { CompanyResponseDto } from '../../../company/dto/response/company.response.dto';
 
 export class UserResponseWhiteListDto {
   constructor(partial: Partial<UserResponseDto>) {
@@ -16,6 +17,8 @@ export class UserResponseWhiteListDto {
   address: AddressResponseDto;
   @Expose()
   account: AccountResponseDto;
+  @Expose()
+  company: CompanyResponseDto;
 }
 
 @Exclude()
