@@ -64,7 +64,7 @@ export class Account extends BaseEntity {
   @Column({
     type: 'varchar',
     length: 100,
-    nullable: false,
+    nullable: true,
   })
   resetPasswordToken: string;
 
