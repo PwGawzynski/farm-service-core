@@ -2,12 +2,11 @@ import {
   BaseEntity,
   Column,
   Entity,
-  Index,
-  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { Company } from '../../company/entities/company.entity';
 
 /**
  * This column represents all address in application, is used to store both user and company addresses
@@ -73,7 +72,8 @@ export class Address extends BaseEntity {
   apartmentNumber?: string | undefined;
 
   @OneToOne(() => User, (user) => user.address, { nullable: true })
-  @JoinColumn()
-  @Index('UNIQ_USER', { unique: true })
   user?: Promise<User | null>;
+
+  @OneToOne(() => Company, (company) => company.address, { nullable: true })
+  company?: Promise<Company | null>;
 }
