@@ -4,18 +4,16 @@ import {
   Entity,
   Index,
   JoinColumn,
-  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Address } from '../../address/entities/address.entity';
-import { User } from '../../user/entities/user.entity';
-import { ConflictException } from '@nestjs/common';
 import { Client } from '../../clients/entities/client.entity';
+import { ConflictException } from '@nestjs/common';
 
 @Entity()
-export class Company extends BaseEntity {
-  constructor(props?: Partial<Company>) {
+export class ClientsCompany extends BaseEntity {
+  constructor(props?: Partial<ClientsCompany>) {
     super();
     if (props) Object.assign(this, props);
   }
@@ -45,15 +43,12 @@ export class Company extends BaseEntity {
   @JoinColumn({ name: 'address_id' })
   address: Promise<Address>;
 
-  @OneToOne(() => User, { nullable: false })
-  @JoinColumn({ name: 'owner_id' })
-  owner: Promise<User>;
-
-  @OneToMany(() => Client, (client) => client.isClientOf, { nullable: true })
-  clients: Promise<Client[] | null>;
+  @OneToOne(() => Client, (client) => client.company, { nullable: false })
+  @JoinColumn({ name: 'client_id' })
+  client: Client;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
-    const exist = await Company.findOne({
+    const exist = await ClientsCompany.findOne({
       where: {
         [key]: this[key],
       },

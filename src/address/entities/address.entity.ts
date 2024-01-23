@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Company } from '../../company/entities/company.entity';
+import { ClientsCompany } from '../../clients_company/entities/clients_company.entity';
 
 /**
  * This column represents all address in application, is used to store both user and company addresses
@@ -76,4 +77,9 @@ export class Address extends BaseEntity {
 
   @OneToOne(() => Company, (company) => company.address, { nullable: true })
   company?: Promise<Company | null>;
+
+  @OneToOne(() => ClientsCompany, (company) => company.address, {
+    nullable: true,
+  })
+  clientsCompany?: Promise<ClientsCompany | null>;
 }

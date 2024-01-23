@@ -13,6 +13,7 @@ import { UserRole } from '../../../FarmServiceApiTypes/User/Enums';
 import { ConflictException } from '@nestjs/common';
 import { PersonalData } from '../../personal-data/entities/personalData.entity';
 import { Address } from '../../address/entities/address.entity';
+import { Client } from '../../clients/entities/client.entity';
 import { Company } from '../../company/entities/company.entity';
 
 /**
@@ -63,6 +64,11 @@ export class User extends BaseEntity {
     name: 'user_address_id',
   })
   address: Promise<Address>;
+
+
+  @OneToOne(() => Client, (client) => client.user, { nullable: true })
+  client: Promise<Client | null>;
+
 
   @OneToOne(() => Company, (company) => company.owner, { nullable: true })
   company: Promise<Company | null>;

@@ -11,9 +11,6 @@ export class AccountWhiteList {
 
 @Exclude()
 export class AccountResponseDto extends AccountWhiteList {
-  @Exclude()
-  id: string;
-
   constructor(partial: Partial<AccountResponseDto>) {
     super(partial);
     Object.assign(this, partial);

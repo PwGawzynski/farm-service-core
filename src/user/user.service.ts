@@ -28,6 +28,9 @@ import { PersonalData } from '../personal-data/entities/personalData.entity';
 import { Address } from '../address/entities/address.entity';
 import { UserResponseDto } from './dto/response/user-response.dto';
 import * as crypto from 'crypto';
+import { AccountResponseDto } from './dto/response/account.response';
+import { AddressResponseDto } from '../address/dto/response/address.response.dto';
+import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 
 @Injectable()
 export class UserService {
@@ -237,16 +240,10 @@ export class UserService {
       code: ResponseCode.ProcessedCorrect,
       payload: new UserResponseDto({
         ...user,
-        account: await user.account,
-        address: await user.address,
-        personal_data: {
-          ...(await user.personalData),
-          phone_number: (await user.personalData).phoneNumber,
-        },
-        company: {
-          ...(await user.company),
-          address: await (await user.company).address,
-        },
+        account: new AccountResponseDto(await user.account),
+        address: new AddressResponseDto(await user.address),
+        personal_data: new PersonalDataResponseDto(await user.personalData),
+
       }),
     } as ResponseObject<UserResponseDto>;
   }
