@@ -22,7 +22,7 @@ class CompanyValidationMessages {
   static readonly PHONE_LENGTH = 'Length must be in 1 to 20 characters';
 }
 
-export class CreateCompanyDto {
+export class BaseCompanyDto {
   @IsString({
     message: CompanyValidationMessages.NAME_STRING,
   })
@@ -87,3 +87,5 @@ export class CreateCompanyDto {
     yield this.address;
   }
 }
+
+export class CreateCompanyDto extends BaseCompanyDto {}
