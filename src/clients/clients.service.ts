@@ -59,7 +59,6 @@ export class ClientsService {
       payload: new ClientsResponseDto({
         user: new UserResponseDto({
           role: registeredUser.role,
-          account: await registeredUser.account,
           address: await registeredUser.address,
           personal_data: new PersonalDataResponseDto(
             await (
