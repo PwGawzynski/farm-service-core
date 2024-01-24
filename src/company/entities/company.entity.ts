@@ -12,6 +12,7 @@ import { Address } from '../../address/entities/address.entity';
 import { User } from '../../user/entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 import { Client } from '../../clients/entities/client.entity';
+import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -23,7 +24,10 @@ export class Company extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('varchar', { length: 500, nullable: false })
+  @Column('varchar', {
+    length: CompanyConstants.MAX_NAME_LENGTH,
+    nullable: false,
+  })
   @Index('UNIQUE_NAME', { unique: true })
   name: string;
 
@@ -34,10 +38,10 @@ export class Company extends BaseEntity {
   @Index('UNIQUE_NIP', { unique: true })
   NIP: string;
 
-  @Column('varchar', { length: 20 })
+  @Column('varchar', { length: CompanyConstants.MAX_PHONE_LENGTH })
   PhoneNumber: string;
 
-  @Column('varchar', { length: 350 })
+  @Column('varchar', { length: CompanyConstants.MAX_EMAIL_LENGTH })
   @Index('UNIQUE_EMAIL', { unique: true })
   email: string;
 
