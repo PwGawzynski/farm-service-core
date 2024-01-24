@@ -24,7 +24,7 @@ export class Client extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => User, (user) => user.client, { nullable: false })
+  @OneToOne(() => User, (user) => user.client, { nullable: false, eager: true })
   @JoinColumn()
   user: User;
 

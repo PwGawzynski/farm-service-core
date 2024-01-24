@@ -21,4 +21,10 @@ export class CompanyController {
   async get(@GetOwnedCompany() company: Company) {
     return this.companyService.get(company);
   }
+
+  @Get('clients')
+  @Owner()
+  async getClients(@GetOwnedCompany() company: Company) {
+    return this.companyService.getClients(company);
+  }
 }
