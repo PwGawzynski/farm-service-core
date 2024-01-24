@@ -18,6 +18,7 @@ import { AddressModule } from './address/address.module';
 import { CompanyModule } from './company/company.module';
 import { ClientsModule } from './clients/clients.module';
 import { ClientsCompanyModule } from './clients_company/clients_company.module';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ClientsCompanyModule } from './clients_company/clients_company.module';
     CompanyModule,
     ClientsModule,
     ClientsCompanyModule,
+    WorkerModule,
   ],
   controllers: [AppController],
   providers: [
