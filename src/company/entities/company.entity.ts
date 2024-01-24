@@ -13,6 +13,7 @@ import { User } from '../../user/entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 import { Client } from '../../clients/entities/client.entity';
 import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
+import { Worker } from '../../worker/entities/worker.entity';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -55,6 +56,9 @@ export class Company extends BaseEntity {
 
   @OneToMany(() => Client, (client) => client.isClientOf, { nullable: true })
   clients: Promise<Client[] | null>;
+
+  @OneToMany(() => Worker, (worker) => worker.company, { nullable: true })
+  workers: Promise<Worker[] | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     const exist = await Company.findOne({
