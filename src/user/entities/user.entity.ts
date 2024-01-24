@@ -15,6 +15,7 @@ import { PersonalData } from '../../personal-data/entities/personalData.entity';
 import { Address } from '../../address/entities/address.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { Company } from '../../company/entities/company.entity';
+import { Worker } from '../../worker/entities/worker.entity';
 
 /**
  * Class represents User entity in db
@@ -71,6 +72,8 @@ export class User extends BaseEntity {
   @OneToOne(() => Company, (company) => company.owner, { nullable: true })
   company: Promise<Company | null>;
 
+  @OneToOne(() => Worker, (worker) => worker.user, { nullable: true })
+  worker: Promise<Worker | null>;
   /**
    * Checks if entity already exist in db
    * @param key one of User properties [keyof User]
