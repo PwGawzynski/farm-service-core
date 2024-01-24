@@ -10,6 +10,7 @@ import {
 import { User } from '../../user/entities/user.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Position, Status } from '../../../FarmServiceApiTypes/Worker/Enums';
+import { ConflictException } from '@nestjs/common';
 
 @Entity()
 export class Worker extends BaseEntity {
@@ -50,4 +51,16 @@ export class Worker extends BaseEntity {
 
   @Column('datetime', { default: () => 'CURRENT_TIMESTAMP' })
   hiredAt: Date;
+
+  async _shouldNotExist<T extends keyof this>(key: T) {
+    const exist = await Worker.findOne({
+      where: {
+        [key]: this[key],
+      },
+    });
+    if (exist)
+      throw new ConflictException(
+        `Worker with given ${key.toString()} already exist`,
+      );
+  }
 }

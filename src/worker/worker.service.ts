@@ -18,6 +18,7 @@ export class WorkerService {
       user: Promise.resolve(user),
       company: Promise.resolve(company),
     });
+    await worker._shouldNotExist('user');
     worker.save();
     return {
       code: ResponseCode.ProcessedCorrect,
