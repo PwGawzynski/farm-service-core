@@ -12,7 +12,6 @@ import { CompanyResponseDto } from './dto/response/company.response.dto';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { ClientsResponseDto } from '../clients/dto/response/client.response.dto';
 import { UserResponseDto } from '../user/dto/response/user-response.dto';
-import { AccountResponseDto } from '../user/dto/response/account.response';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 
 @Injectable()
@@ -61,12 +60,10 @@ export class CompanyService {
       const user = client.user;
       console.log(user, 'user');
       const address = await user.address;
-      const account = await user.account;
       const personalData = await user.personalData;
       return new ClientsResponseDto({
         user: new UserResponseDto({
           address: new AddressResponseDto(address),
-          account: new AccountResponseDto(account),
           role: user.role,
           personal_data: new PersonalDataResponseDto(personalData),
         }),
