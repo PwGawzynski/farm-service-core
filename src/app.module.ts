@@ -19,6 +19,7 @@ import { CompanyModule } from './company/company.module';
 import { ClientsModule } from './clients/clients.module';
 import { ClientsCompanyModule } from './clients_company/clients_company.module';
 import { WorkerModule } from './worker/worker.module';
+import { MachineModule } from './machine/machine.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { WorkerModule } from './worker/worker.module';
     ClientsModule,
     ClientsCompanyModule,
     WorkerModule,
+    MachineModule,
   ],
   controllers: [AppController],
   providers: [
