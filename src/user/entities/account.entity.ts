@@ -14,13 +14,7 @@ import { Theme } from '../../../FarmServiceApiTypes/Account/Constants';
  */
 @Entity()
 export class Account extends BaseEntity {
-  constructor(props?: {
-    email: string;
-    password: string;
-    activationCode: string;
-    user: Promise<User>;
-    isActivated?: boolean;
-  }) {
+  constructor(props?: Partial<Account>) {
     super();
     if (props) Object.assign(this, props);
   }
@@ -68,11 +62,14 @@ export class Account extends BaseEntity {
   })
   resetPasswordToken: string | null;
 
-  @OneToOne(() => User, (user) => user.account, { onDelete: 'NO ACTION' })
+  @OneToOne(() => User, (user) => user.account, {
+    onDelete: 'NO ACTION',
+    nullable: true,
+  })
   @JoinColumn({
     name: 'user_id',
   })
-  user: Promise<User>;
+  user: Promise<User | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     const exist = await Account.findOne({
