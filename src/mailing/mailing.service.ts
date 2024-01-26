@@ -44,6 +44,10 @@ export class MailingService {
           printWarnToConsole('Refreshing token failure', 'MailingService');
           reject('Failed to create access token');
         }
+        if (!token) {
+          reject('Failed to create access token');
+          return;
+        }
         resolve(token);
       });
     });
