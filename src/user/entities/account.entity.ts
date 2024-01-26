@@ -66,7 +66,7 @@ export class Account extends BaseEntity {
     length: 100,
     nullable: true,
   })
-  resetPasswordToken: string;
+  resetPasswordToken: string | null;
 
   @OneToOne(() => User, (user) => user.account, { onDelete: 'NO ACTION' })
   @JoinColumn({
