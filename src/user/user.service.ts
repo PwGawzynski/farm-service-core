@@ -237,6 +237,7 @@ export class UserService {
   }
 
   async me(user: User) {
+    console.log(await user.company);
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: new UserResponseDto({
@@ -246,7 +247,7 @@ export class UserService {
         personal_data: new PersonalDataResponseDto(await user.personalData),
         company: new CompanyResponseDto({
           ...(await user.company),
-          address: new AddressResponseDto(await (await user.company).address),
+          address: new AddressResponseDto(await (await user.company)?.address),
         }),
       }),
     } as ResponseObject<UserResponseDto>;
