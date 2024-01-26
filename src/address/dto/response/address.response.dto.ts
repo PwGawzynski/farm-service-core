@@ -1,7 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
 
 export class AddressWhiteList {
-  constructor(partial: Partial<AddressResponseDto>) {
+  constructor(partial?: Partial<AddressResponseDto>) {
     Object.assign(this, partial);
   }
 
@@ -29,7 +29,7 @@ export class AddressWhiteList {
 
 @Exclude()
 export class AddressResponseDto extends AddressWhiteList {
-  constructor(partial: Partial<AddressResponseDto>) {
+  constructor(partial?: Partial<AddressResponseDto>) {
     super(partial);
     Object.assign(this, partial);
   }
