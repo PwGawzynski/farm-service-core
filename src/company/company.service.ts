@@ -55,8 +55,7 @@ export class CompanyService {
 
   async getClients(company: Company) {
     const clients = await company.clients;
-    console.log(await clients[0].isClientOf);
-    const clientsResponse = clients.map(async (client) => {
+    const clientsResponse = clients?.map(async (client) => {
       const user = client.user;
       console.log(user, 'user');
       const address = await user.address;
@@ -71,7 +70,7 @@ export class CompanyService {
     });
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await Promise.all(clientsResponse),
+      payload: clientsResponse ? await Promise.all(clientsResponse) : [],
     } as ResponseObject<ClientsResponseDto[]>;
   }
 }
