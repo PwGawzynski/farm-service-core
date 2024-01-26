@@ -9,7 +9,7 @@ class ClientResponseWhiteList {
   @Expose()
   user: UserResponseDto;
   @Expose()
-  company: ClientsCompanyResponseDto;
+  company?: ClientsCompanyResponseDto;
 }
 @Exclude()
 export class ClientsResponseDto extends ClientResponseWhiteList {
