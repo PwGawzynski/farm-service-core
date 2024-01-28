@@ -242,6 +242,7 @@ export class UserService {
   }
 
   async me(user: User) {
+    console.log(await user.company, 'IMPORT');
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: new UserResponseDto({

@@ -19,7 +19,7 @@ export function throwError(msg: string, warnMsg: string, location: string) {
  */
 export const GetUser = createParamDecorator(
   async (data: unknown, ctx: ExecutionContext) => {
-    console.log(ctx.switchToHttp().getRequest(), 'user');
+    console.log(ctx.switchToHttp().getRequest().user.id, 'user');
     return ctx.switchToHttp().getRequest().user;
   },
 );

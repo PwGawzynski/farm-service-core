@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { Company } from './entities/company.entity';
 import { Address } from '../address/entities/address.entity';
@@ -25,12 +25,20 @@ export class CompanyService {
       owner: Promise.resolve(owner),
     });
 
+    const exist = await Company.findOne({
+      where: {
+        owner: {
+          id: owner.id,
+        },
+      },
+    });
+    if (exist) throw new ConflictException('User already has company');
     await company._shouldNotExist('email', 'Email is already in use');
-    await company._shouldNotExist(
-      'owner',
-      'User is already an owner of a company',
-    );
     await company._shouldNotExist('name', 'Name is already in use');
+    await company._shouldNotExist(
+      'phoneNumber',
+      'PhoneNumber is already in use',
+    );
     await company._shouldNotExist('NIP', 'NIP is already in use');
     company.save();
 

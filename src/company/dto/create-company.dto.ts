@@ -72,7 +72,7 @@ export class BaseCompanyDto {
       message: CompanyValidationMessages.PHONE_LENGTH,
     },
   )
-  PhoneNumber: string;
+  phoneNumber: string;
 
   @IsDefined()
   @ValidateNested()
@@ -83,7 +83,7 @@ export class BaseCompanyDto {
     yield this.name;
     yield this.email;
     yield this.NIP;
-    yield this.PhoneNumber;
+    yield this.phoneNumber;
     yield this.address;
   }
 }

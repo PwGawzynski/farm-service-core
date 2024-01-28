@@ -12,7 +12,7 @@ export class BaseCompanyResponseWhiteList {
   @Expose()
   NIP: string;
   @Expose()
-  PhoneNumber: string;
+  phoneNumber: string;
   @Expose()
   address: AddressResponseDto;
 }
