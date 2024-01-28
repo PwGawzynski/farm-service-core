@@ -8,7 +8,7 @@ export function FindOrReject(
   baseClass: new () => any,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: unknown, propertyName: string) {
+  return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       name: 'FindOrReject',
       target: object.constructor,

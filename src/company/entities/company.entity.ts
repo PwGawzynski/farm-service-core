@@ -41,7 +41,7 @@ export class Company extends BaseEntity {
   NIP: string;
 
   @Column('varchar', { length: CompanyConstants.MAX_PHONE_LENGTH })
-  PhoneNumber: string;
+  phoneNumber: string;
 
   @Column('varchar', { length: CompanyConstants.MAX_EMAIL_LENGTH })
   @Index('UNIQUE_EMAIL', { unique: true })
@@ -65,11 +65,20 @@ export class Company extends BaseEntity {
   machines: Promise<Machine[] | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
+    if (
+      !(
+        typeof this[key] !== 'string' ||
+        typeof this[key] !== 'number' ||
+        typeof this[key] !== 'boolean'
+      )
+    )
+      throw new Error('Invalid key type');
     const exist = await Company.findOne({
       where: {
         [key]: this[key],
       },
     });
+    console.log((await exist?.owner)?.id, 'shouldNot', key, this[key]);
     if (exist) throw new ConflictException(conflictMsg);
   }
 }

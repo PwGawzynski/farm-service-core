@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -32,6 +33,7 @@ import { AccountResponseDto } from './dto/response/account.response';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
+import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 
 @Injectable()
 export class UserService {
@@ -45,7 +47,7 @@ export class UserService {
    * @param login -- user login string value
    * @return Promise : User
    */
-  async findOne(login: string): Promise<User> {
+  async findOne(login: string): Promise<User | null> {
     return User.findOne({
       where: {
         account: {
@@ -102,6 +104,9 @@ export class UserService {
    * @return ResponseObject with proper code
    */
   async register(data: CreateUserDto) {
+    if (data.role === UserRole.Client)
+      throw new UnauthorizedException("You don't have permission to do this");
+
     const newUser = new User({ ...data });
     const newAccount = new Account({
       ...data,
@@ -237,7 +242,7 @@ export class UserService {
   }
 
   async me(user: User) {
-    console.log(await user.company);
+    console.log(await user.company, 'IMPORT');
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: new UserResponseDto({
@@ -245,10 +250,16 @@ export class UserService {
         account: new AccountResponseDto(await user.account),
         address: new AddressResponseDto(await user.address),
         personal_data: new PersonalDataResponseDto(await user.personalData),
-        company: new CompanyResponseDto({
-          ...(await user.company),
-          address: new AddressResponseDto(await (await user.company)?.address),
-        }),
+        company: (await user.company)
+          ? new CompanyResponseDto({
+              ...(await user.company),
+              address: new AddressResponseDto(
+                await (
+                  await user.company
+                )?.address,
+              ),
+            })
+          : undefined,
       }),
     } as ResponseObject<UserResponseDto>;
   }

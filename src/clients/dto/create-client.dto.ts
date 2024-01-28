@@ -4,7 +4,7 @@ import { CreateUserDto } from '../../user/dto/create-user.dto';
 import { CreateClientsCompanyDto } from '../../clients_company/dto/create-clients_comapny.dto';
 import { OmitType } from '@nestjs/mapped-types';
 
-class CreateUserAsClient extends OmitType(CreateUserDto, [
+export class CreateUserAsClient extends OmitType(CreateUserDto, [
   'password',
   'role',
 ] as const) {}

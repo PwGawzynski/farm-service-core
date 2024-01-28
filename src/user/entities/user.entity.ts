@@ -33,9 +33,8 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => Account, (account) => account.user, { onDelete: 'CASCADE' })
-  @JoinColumn({
-    name: 'account_id',
+  @OneToOne(() => Account, (account) => account.user, {
+    onDelete: 'CASCADE',
   })
   account: Promise<Account>;
 

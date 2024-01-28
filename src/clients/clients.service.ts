@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { CreateClientDto } from './dto/create-client.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { CreateClientDto, CreateUserAsClient } from './dto/create-client.dto';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 import * as crypto from 'crypto';
@@ -24,24 +24,29 @@ export class ClientsService {
     private readonly users: UserService,
     private readonly clientsCompany: ClientsCompanyService,
   ) {}
-  async create(createClientDto: CreateClientDto, company: Company) {
+
+  async _createUser(user: CreateUserAsClient) {
     const randomPwd = crypto.randomBytes(128).toString('hex');
-    console.log(randomPwd);
     await this.users.register({
-      ...createClientDto.user,
+      ...user,
       password: randomPwd,
       role: UserRole.Client,
     });
     const registeredUser = await User.findOne({
       where: {
         account: {
-          email: createClientDto.user.email,
+          email: user.email,
         },
       },
     });
+    if (!registeredUser)
+      throw new InternalServerErrorException('Something went wrong');
 
-    const companyAddress = new Address(createClientDto.company.address);
-    await companyAddress.save();
+    return registeredUser;
+  }
+
+  async create(createClientDto: CreateClientDto, company: Company) {
+    const registeredUser = await this._createUser(createClientDto.user);
 
     const client = new Client({
       user: registeredUser,
@@ -49,28 +54,41 @@ export class ClientsService {
     });
     await client.save();
 
-    const clients_company = await this.clientsCompany.create(
-      client,
-      createClientDto.company,
-    );
+    const ClientWithoutCompany = {
+      user: new UserResponseDto({
+        role: registeredUser.role,
+        address: await registeredUser.address,
+        personal_data: new PersonalDataResponseDto(
+          await (
+            await registeredUser
+          ).personalData,
+        ),
+      }),
+    } as ClientsResponseDto;
+
+    if (createClientDto.company) {
+      const companyAddress = new Address(createClientDto.company.address);
+      await companyAddress.save();
+
+      const clients_company = await this.clientsCompany.create(
+        client,
+        createClientDto.company,
+      );
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: new ClientsResponseDto({
+          ...ClientWithoutCompany,
+          company: new ClientsCompanyResponseDto({
+            ...clients_company,
+            address: new AddressResponseDto(companyAddress),
+          }),
+        }),
+      } as ResponseObject<ClientsResponseDto>;
+    }
 
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: new ClientsResponseDto({
-        user: new UserResponseDto({
-          role: registeredUser.role,
-          address: await registeredUser.address,
-          personal_data: new PersonalDataResponseDto(
-            await (
-              await registeredUser
-            ).personalData,
-          ),
-        }),
-        company: new ClientsCompanyResponseDto({
-          ...clients_company,
-          address: new AddressResponseDto(companyAddress),
-        }),
-      }),
+      payload: new ClientsResponseDto(ClientWithoutCompany),
     } as ResponseObject<ClientsResponseDto>;
   }
 }

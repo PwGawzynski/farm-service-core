@@ -31,42 +31,49 @@ export class Address extends BaseEntity {
   id: string;
 
   @Column({
+    type: 'varchar',
     nullable: false,
     length: 70,
   })
   city: string;
 
   @Column({
+    type: 'varchar',
     length: 50,
     nullable: false,
   })
   county: string;
 
   @Column({
+    type: 'varchar',
     length: 50,
     nullable: true,
   })
   voivodeship?: string;
 
   @Column({
+    type: 'varchar',
     length: 6,
     nullable: false,
   })
   postalCode: string;
 
   @Column({
+    type: 'varchar',
     length: 100,
     nullable: true,
   })
   street?: string;
 
   @Column({
+    type: 'varchar',
     length: 20,
     nullable: false,
   })
   houseNumber: string;
 
   @Column({
+    type: 'varchar',
     length: 20,
     nullable: true,
   })

@@ -39,7 +39,7 @@ export class AuthService {
    * @return User Entity Object if credentials are correct
    * @throws error if not
    */
-  async checkUserCredentials(userData: UserDataDto): Promise<User | undefined> {
+  async checkUserCredentials(userData: UserDataDto): Promise<User> {
     const user = await this.userService.findOne(userData.email);
     if (!user) throw new HttpException('Unauthorised', HttpStatus.UNAUTHORIZED);
     const credentials = await user.account;
@@ -64,13 +64,18 @@ export class AuthService {
     const toRemove = tokens.filter((token) => {
       return (
         new Date().getTime() - token.createdAt.getTime() >
-        parseInt(this.configService.get<string>('refreshTokenExpirationTime'))
+        parseInt(
+          this.configService.get<string>('refreshTokenExpirationTime') ||
+            '21600000',
+        )
       );
     });
     toRemove.forEach((token) => token.remove());
     if (
       tokens.length - toRemove.length >
-      parseInt(this.configService.get<string>('maxRegisteredDevicesCount'))
+      parseInt(
+        this.configService.get<string>('maxRegisteredDevicesCount') || '180m',
+      )
     )
       throw new HttpException(
         'The maximum numbers of active devices has been Violated',
@@ -127,7 +132,8 @@ export class AuthService {
       this.jwtService.signAsync(refreshPayload, {
         secret: this.configService.get<string>('refreshSign'),
         expiresIn: parseInt(
-          this.configService.get<string>('refreshTokenExpirationTime'),
+          this.configService.get<string>('refreshTokenExpirationTime') ||
+            '21600000',
         ),
       }),
     ]);
@@ -185,7 +191,8 @@ export class AuthService {
    * @throws HttpException in case operation failure
    */
   async refreshToken(req: Request) {
-    console.log(req.user, 'REF_TOK');
+    if (!req.user)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const validUser = await this.userService.findOneById(req.user['userId']);
     if (!validUser)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -196,11 +203,13 @@ export class AuthService {
         user: { id: validUser['userId'] },
       },
     });
-    console.log(oldTokensEntity, 'OTSE');
     const oldTokenEntity = (
       await Promise.all(
         oldTokensEntity.map((t) =>
-          this.checkDeviceId(req.user['refreshToken'], t.deviceId),
+          this.checkDeviceId(
+            (req.user as Express.User)['refreshToken'],
+            t.deviceId,
+          ),
         ),
       )
     ).find((result) => typeof result === 'string');
@@ -214,7 +223,7 @@ export class AuthService {
           deviceId: oldTokenEntity,
         },
       })
-    ).remove();
+    )?.remove();
 
     const newTokenEntity = new RefreshToken();
     const [accessToken, refreshToken] = await this.createTokens(
