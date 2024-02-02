@@ -12,9 +12,9 @@ import { Address } from '../../address/entities/address.entity';
 import { User } from '../../user/entities/user.entity';
 import { ConflictException } from '@nestjs/common';
 import { Client } from '../../clients/entities/client.entity';
-import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
 import { Worker } from '../../worker/entities/worker.entity';
 import { Machine } from '../../machine/entities/machine.entity';
+import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -36,7 +36,10 @@ export class Company extends BaseEntity {
   @Column('datetime', { default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column('varchar', {})
+  @Column('varchar', {
+    length: CompanyConstants.MAX_NIP_LENGTH,
+    nullable: false,
+  })
   @Index('UNIQUE_NIP', { unique: true })
   NIP: string;
 
