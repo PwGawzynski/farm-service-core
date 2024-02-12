@@ -5,7 +5,6 @@ import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 import * as crypto from 'crypto';
 import { Client } from './entities/client.entity';
 import { User } from '../user/entities/user.entity';
-import { Address } from '../address/entities/address.entity';
 import { Company } from '../company/entities/company.entity';
 import {
   ResponseCode,
@@ -59,17 +58,13 @@ export class ClientsService {
         role: registeredUser.role,
         address: await registeredUser.address,
         personal_data: new PersonalDataResponseDto(
-          await (
-            await registeredUser
-          ).personalData,
+          await registeredUser.personalData,
         ),
       }),
     } as ClientsResponseDto;
 
+    // Client can be created without its company data
     if (createClientDto.company) {
-      const companyAddress = new Address(createClientDto.company.address);
-      await companyAddress.save();
-
       const clients_company = await this.clientsCompany.create(
         client,
         createClientDto.company,
@@ -80,7 +75,7 @@ export class ClientsService {
           ...ClientWithoutCompany,
           company: new ClientsCompanyResponseDto({
             ...clients_company,
-            address: new AddressResponseDto(companyAddress),
+            address: new AddressResponseDto(clients_company.address),
           }),
         }),
       } as ResponseObject<ClientsResponseDto>;
@@ -90,5 +85,44 @@ export class ClientsService {
       code: ResponseCode.ProcessedCorrect,
       payload: new ClientsResponseDto(ClientWithoutCompany),
     } as ResponseObject<ClientsResponseDto>;
+  }
+
+  async all(company: Company) {
+    const clients = await company.clients;
+    if (!clients)
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: [] as ClientsResponseDto[],
+      } as ResponseObject<ClientsResponseDto[]>;
+
+    const clientsResponse = await Promise.all(
+      clients.map(async (client) => {
+        const user = client.user;
+        const personalData = await user.personalData;
+        const clientsCompany = await client.company;
+        return new ClientsResponseDto({
+          id: client.id,
+          email: (await user.account).email,
+          user: new UserResponseDto({
+            role: user.role,
+            address: await user.address,
+            personal_data: new PersonalDataResponseDto({
+              ...personalData,
+              phone_number: personalData.phoneNumber,
+            }),
+          }),
+          company: clientsCompany
+            ? new ClientsCompanyResponseDto({
+                ...clientsCompany,
+                address: await clientsCompany.address,
+              })
+            : undefined,
+        });
+      }),
+    );
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: clientsResponse,
+    } as ResponseObject<ClientsResponseDto[]>;
   }
 }
