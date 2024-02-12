@@ -8,6 +8,7 @@ import {
 import { User } from '../../user/entities/user.entity';
 import { Company } from '../../company/entities/company.entity';
 import { ClientsCompany } from '../../clients_company/entities/clients_company.entity';
+import AddressConstants from '../../../FarmServiceApiTypes/Address/Constants';
 
 /**
  * This column represents all address in application, is used to store both user and company addresses
@@ -33,48 +34,48 @@ export class Address extends BaseEntity {
   @Column({
     type: 'varchar',
     nullable: false,
-    length: 70,
+    length: AddressConstants.CITY_MAX_LEN,
   })
   city: string;
 
   @Column({
     type: 'varchar',
-    length: 50,
+    length: AddressConstants.COUNTY_MAX_LEN,
     nullable: false,
   })
   county: string;
 
   @Column({
     type: 'varchar',
-    length: 50,
+    length: AddressConstants.VOIVODESHIP_MAX_LEN,
     nullable: true,
   })
   voivodeship?: string;
 
   @Column({
     type: 'varchar',
-    length: 6,
+    length: AddressConstants.POSTAL_CODE_LEN,
     nullable: false,
   })
   postalCode: string;
 
   @Column({
     type: 'varchar',
-    length: 100,
+    length: AddressConstants.STREET_MAX_LEN,
     nullable: true,
   })
   street?: string;
 
   @Column({
     type: 'varchar',
-    length: 20,
+    length: AddressConstants.HOUSE_NR_MAX_LEN,
     nullable: false,
   })
   houseNumber: string;
 
   @Column({
     type: 'varchar',
-    length: 20,
+    length: AddressConstants.APARTMENT_NR_MAX_LEN,
     nullable: true,
   })
   apartmentNumber?: string | undefined;
