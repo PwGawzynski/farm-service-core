@@ -21,7 +21,7 @@ function matchRoles(roles: Array<UserRole>, userRole: UserRole) {
 }
 
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class RoleGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get('roles', context.getHandler());
