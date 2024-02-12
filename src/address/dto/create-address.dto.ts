@@ -42,6 +42,7 @@ export class CreateAddressDto {
   @IsOptional()
   voivodeship?: string;
 
+  @IsOptional()
   @IsString({
     message: 'Street must be string type',
   })
@@ -49,7 +50,6 @@ export class CreateAddressDto {
     message: 'Street cannot be empty string',
   })
   @Length(AddressConstants.STREET_MIN_LEN, AddressConstants.STREET_MAX_LEN)
-  @IsOptional()
   street?: string;
 
   @IsString({

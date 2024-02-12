@@ -10,7 +10,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { GlobalExceptionFilter } from '../ExceptionFilters/GlobalFilter';
 import { UserModule } from './user/user.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { RolesGuard } from '../Guards/RoleGuard';
+import { RoleGuard } from '../Guards/RoleGuard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { PersonalDataModule } from './personal-data/personal-data.module';
@@ -70,7 +70,7 @@ import { MachineModule } from './machine/machine.module';
     },
     {
       provide: APP_GUARD,
-      useClass: RolesGuard,
+      useClass: RoleGuard,
     },
   ],
 })

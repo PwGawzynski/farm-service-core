@@ -37,7 +37,7 @@ export class PersonalData extends BaseEntity {
 
   @Column({
     nullable: false,
-    length: 12,
+    length: 13,
   })
   phoneNumber: string;
 

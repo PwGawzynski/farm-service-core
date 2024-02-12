@@ -4,6 +4,12 @@ import { CreateClientsCompanyDto } from './dto/create-clients_comapny.dto';
 import { ClientsCompany } from './entities/clients_company.entity';
 import { Address } from '../address/entities/address.entity';
 import { ClientsCompanyResponseDto } from './dto/response/clients_company.response';
+import { AssignCompanyDataToClientDto } from './dto/assign_company.dto';
+import {
+  ResponseCode,
+  ResponseObject,
+} from '../../FarmServiceApiTypes/Respnse/responseGeneric';
+import { UpdateClientsCompanyDto } from './dto/update-clients_company.dto';
 
 @Injectable()
 export class ClientsCompanyService {
@@ -26,5 +32,52 @@ export class ClientsCompanyService {
       ...clients_company,
       address: companyAddress,
     });
+  }
+
+  async assignCompanyToClient(data: AssignCompanyDataToClientDto) {
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this.create(data.client, data),
+    } as ResponseObject<ClientsCompanyResponseDto>;
+  }
+
+  async update(updateData: UpdateClientsCompanyDto) {
+    const { company, ...data } = updateData;
+    const oldCompany = company;
+
+    company.email = data.email || oldCompany.email;
+    company.name = data.name || oldCompany.name;
+    company.NIP = data.NIP || oldCompany.NIP;
+    company.phoneNumber = data.phoneNumber || oldCompany.phoneNumber;
+    const address = new Address(data.address) || company.address;
+    company.address = Promise.resolve(address);
+
+    if (updateData.company.NIP !== oldCompany.NIP)
+      await company._shouldNotExist('NIP', 'NIP already exists');
+    if (updateData.company.email !== oldCompany.email)
+      await company._shouldNotExist('email', 'Email already exists');
+    if (updateData.company.name !== oldCompany.name)
+      await company._shouldNotExist('name', 'Name already exists');
+
+    // noinspection ES6MissingAwait
+    ClientsCompany.createQueryBuilder()
+      .update(company)
+      .set({
+        address: Promise.resolve(address),
+        NIP: updateData.NIP,
+        email: updateData.email,
+        name: updateData.name,
+        phoneNumber: updateData.phoneNumber,
+      })
+      .where('id = :id', { id: company.id })
+      .execute();
+
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: new ClientsCompanyResponseDto({
+        ...company,
+        address,
+      }),
+    } as ResponseObject<ClientsCompanyResponseDto>;
   }
 }

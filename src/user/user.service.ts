@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -33,7 +32,6 @@ import { AccountResponseDto } from './dto/response/account.response';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
-import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 
 @Injectable()
 export class UserService {
@@ -104,8 +102,9 @@ export class UserService {
    * @return ResponseObject with proper code
    */
   async register(data: CreateUserDto) {
-    if (data.role === UserRole.Client)
-      throw new UnauthorizedException("You don't have permission to do this");
+    // TODO -> powoduje blad bo z tego korzysta tworzenie klienta i wtedy jest client
+    /*if (data.role === UserRole.Client)
+      throw new UnauthorizedException("You don't have permission to do this");*/
 
     const newUser = new User({ ...data });
     const newAccount = new Account({

@@ -71,14 +71,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
        */
       if (isTokenCorrect instanceof Observable) {
         /**
-         * we create new promise and resolve it with value from observable
+         * we create a new promise and resolve it with value from observable
          */
         return new Promise((resolve) => {
           isTokenCorrect.subscribe((value) => {
             /**
              * checks if super.canValidate returned true -> token is correct
              */
-            console.log('check');
             if (!value) resolve(value);
             resolve(this._AssignUser(tokenUser.userId, context));
           });
@@ -94,7 +93,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     /**
      * if operation is CREATE_USER_ACTION we only have to valid token,
-     * but our isTokenCorrect still can be observable so we check it,
+     * but our isTokenCorrect still can be observable, so we check it,
      * and base on this we return value
      */
     return isTokenCorrect instanceof Observable

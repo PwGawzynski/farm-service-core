@@ -20,6 +20,7 @@ export function FindOrReject(
           const relatedPropertyName = args.property;
           const [baseClass] = args.constraints;
           const relatedValue = await (args.object as any)[relatedPropertyName];
+          if (!relatedValue) return false;
           let classInstance;
           if (!Array.isArray(relatedValue)) {
             classInstance = await baseClass.findOne({

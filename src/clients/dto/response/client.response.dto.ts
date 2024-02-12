@@ -7,6 +7,10 @@ class ClientResponseWhiteList {
     Object.assign(this, partial);
   }
   @Expose()
+  id: string;
+  @Expose()
+  email: string;
+  @Expose()
   user: UserResponseDto;
   @Expose()
   company?: ClientsCompanyResponseDto;
