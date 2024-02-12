@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { Owner } from '../../decorators/auth.decorators';
@@ -16,5 +16,11 @@ export class ClientsController {
     @GetOwnedCompany() company: Company,
   ) {
     return this.clientsService.create(createClientDto, company);
+  }
+
+  @Get('all')
+  @Owner()
+  findAll(@GetOwnedCompany() company: Company) {
+    return this.clientsService.all(company);
   }
 }
