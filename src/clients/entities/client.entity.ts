@@ -12,11 +12,7 @@ import { Company } from '../../company/entities/company.entity';
 
 @Entity()
 export class Client extends BaseEntity {
-  constructor(props?: {
-    user: User;
-    company?: Promise<ClientsCompany | null>;
-    isClientOf?: Promise<Company | null>;
-  }) {
+  constructor(props?: Partial<Client>) {
     super();
     if (props) Object.assign(this, props);
   }
