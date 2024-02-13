@@ -13,16 +13,52 @@ import {
 import { ClientsResponseDto } from './dto/response/client.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { ClientsCompanyResponseDto } from '../clients_company/dto/response/clients_company.response';
-import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { ClientsCompanyService } from '../clients_company/clients_company.service';
 import { UserResponseDto } from '../user/dto/response/user-response.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
+import { PersonalDataService } from '../personal-data/personal-data.service';
+import { AddressService } from '../address/address.service';
+import { Account } from '../user/entities/account.entity';
+import { CreatePersonalDataDto } from '../personal-data/dto/create-personal-data.dto';
+import { CreateAddressDto } from '../address/dto/create-address.dto';
+import { PersonalData } from '../personal-data/entities/personalData.entity';
+import { ClientsCompany } from '../clients_company/entities/clients_company.entity';
+import { Address } from '../address/entities/address.entity';
 
 @Injectable()
 export class ClientsService {
   constructor(
     private readonly users: UserService,
     private readonly clientsCompany: ClientsCompanyService,
+    private readonly personalDataService: PersonalDataService,
+    private readonly addressService: AddressService,
   ) {}
+
+  async _createResponseDto(
+    client: Client,
+    user: User,
+    personalData: PersonalData,
+    clientsCompany: ClientsCompany | null,
+  ) {
+    return new ClientsResponseDto({
+      id: client.id,
+      email: (await user.account).email,
+      user: new UserResponseDto({
+        role: user.role,
+        address: await user.address,
+        personal_data: new PersonalDataResponseDto({
+          ...personalData,
+          phone_number: personalData.phoneNumber,
+        }),
+      }),
+      company: clientsCompany
+        ? new ClientsCompanyResponseDto({
+            ...clientsCompany,
+            address: await clientsCompany.address,
+          })
+        : undefined,
+    });
+  }
 
   async _createUser(user: CreateUserAsClient) {
     const randomPwd = crypto.randomBytes(128).toString('hex');
@@ -71,13 +107,15 @@ export class ClientsService {
       );
       return {
         code: ResponseCode.ProcessedCorrect,
-        payload: new ClientsResponseDto({
-          ...ClientWithoutCompany,
-          company: new ClientsCompanyResponseDto({
+        payload: await this._createResponseDto(
+          client,
+          client.user,
+          await client.user.personalData,
+          new ClientsCompany({
             ...clients_company,
-            address: new AddressResponseDto(clients_company.address),
+            address: Promise.resolve(new Address(clients_company.address)),
           }),
-        }),
+        ),
       } as ResponseObject<ClientsResponseDto>;
     }
 
@@ -100,29 +138,62 @@ export class ClientsService {
         const user = client.user;
         const personalData = await user.personalData;
         const clientsCompany = await client.company;
-        return new ClientsResponseDto({
-          id: client.id,
-          email: (await user.account).email,
-          user: new UserResponseDto({
-            role: user.role,
-            address: await user.address,
-            personal_data: new PersonalDataResponseDto({
-              ...personalData,
-              phone_number: personalData.phoneNumber,
-            }),
-          }),
-          company: clientsCompany
-            ? new ClientsCompanyResponseDto({
-                ...clientsCompany,
-                address: await clientsCompany.address,
-              })
-            : undefined,
-        });
+        return this._createResponseDto(
+          client,
+          user,
+          personalData,
+          clientsCompany,
+        );
       }),
     );
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: clientsResponse,
     } as ResponseObject<ClientsResponseDto[]>;
+  }
+
+  async _updatePersonalData(
+    personal_data: CreatePersonalDataDto,
+    client: Client,
+  ) {
+    return this.personalDataService.update({
+      ...personal_data,
+      id: (await client.user.personalData).id,
+    });
+  }
+  async _updateAddress(address: CreateAddressDto, client: Client) {
+    return this.addressService.update({
+      ...address,
+      id: (await client.user.address).id,
+    });
+  }
+
+  async update(updateData: UpdateClientDto) {
+    const { personal_data, client, email, address } = updateData;
+    if (personal_data) {
+      const res = await this._updatePersonalData(personal_data, client);
+      client.user.personalData = Promise.resolve(new PersonalData(res.payload));
+    }
+    if (address) {
+      const res = await this._updateAddress(address, client);
+      client.user.address = Promise.resolve(new Address(res.payload));
+    }
+    const account = await client.user.account;
+    if (email)
+      // noinspection ES6MissingAwait
+      Account.createQueryBuilder()
+        .update(account)
+        .set({ email })
+        .where({ id: account.id })
+        .execute();
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this._createResponseDto(
+        client,
+        client.user,
+        await client.user.personalData,
+        await client.company,
+      ),
+    } as ResponseObject<ClientsResponseDto>;
   }
 }
