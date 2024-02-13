@@ -5,5 +5,6 @@ import { PersonalDataController } from './personal-data.controller';
 @Module({
   controllers: [PersonalDataController],
   providers: [PersonalDataService],
+  exports: [PersonalDataService],
 })
 export class PersonalDataModule {}
