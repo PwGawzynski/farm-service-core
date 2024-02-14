@@ -13,6 +13,19 @@ import { UpdateClientsCompanyDto } from './dto/update-clients_company.dto';
 
 @Injectable()
 export class ClientsCompanyService {
+  async _createResBase(company: ClientsCompany) {
+    return new ClientsCompanyResponseDto({
+      ...company,
+      address: await company.address,
+    });
+  }
+  async _createResObject(company: ClientsCompany) {
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this._createResBase(company),
+    } as ResponseObject<ClientsCompanyResponseDto>;
+  }
+
   async create(
     client: Client,
     createClientsCompanyDto: CreateClientsCompanyDto,
@@ -28,13 +41,11 @@ export class ClientsCompanyService {
     await clients_company._shouldNotExist('name', 'Name already exists');
     await companyAddress.save();
     clients_company.save();
-    return new ClientsCompanyResponseDto({
-      ...clients_company,
-      address: companyAddress,
-    });
+    return this._createResBase(clients_company);
   }
 
   async assignCompanyToClient(data: AssignCompanyDataToClientDto) {
+    console.log(data);
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: await this.create(data.client, data),
@@ -72,12 +83,6 @@ export class ClientsCompanyService {
       .where('id = :id', { id: company.id })
       .execute();
 
-    return {
-      code: ResponseCode.ProcessedCorrect,
-      payload: new ClientsCompanyResponseDto({
-        ...company,
-        address,
-      }),
-    } as ResponseObject<ClientsCompanyResponseDto>;
+    return this._createResObject(company);
   }
 }

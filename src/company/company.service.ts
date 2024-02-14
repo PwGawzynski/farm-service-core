@@ -69,6 +69,8 @@ export class CompanyService {
       const address = await user.address;
       const personalData = await user.personalData;
       return new ClientsResponseDto({
+        id: client.id,
+        email: (await user.account).email,
         user: new UserResponseDto({
           address: new AddressResponseDto(address),
           role: user.role,

@@ -29,11 +29,11 @@ export class CreatePersonalDataDto {
     message: 'Apartment number cannot be empty string',
   })
   @Length(0, 13)
-  phone_number: string;
+  phoneNumber: string;
 
   *[Symbol.iterator]() {
     yield this.name;
     yield this.surname;
-    yield this.phone_number;
+    yield this.phoneNumber;
   }
 }

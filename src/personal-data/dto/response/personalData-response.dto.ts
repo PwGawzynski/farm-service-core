@@ -9,7 +9,7 @@ export class PersonalDataResponseWhiteList {
   @Expose()
   surname: string;
   @Expose()
-  phone_number: string;
+  phoneNumber: string;
 }
 
 @Exclude()

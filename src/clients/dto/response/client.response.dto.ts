@@ -17,7 +17,7 @@ class ClientResponseWhiteList {
 }
 @Exclude()
 export class ClientsResponseDto extends ClientResponseWhiteList {
-  constructor(partial: Partial<ClientsResponseDto>) {
+  constructor(partial: ClientsResponseDto) {
     super(partial);
     Object.assign(this, partial);
   }

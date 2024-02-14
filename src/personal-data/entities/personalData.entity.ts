@@ -11,12 +11,7 @@ import { ConflictException } from '@nestjs/common';
 
 @Entity()
 export class PersonalData extends BaseEntity {
-  constructor(props?: {
-    name: string;
-    surname: string;
-    phoneNumber: string;
-    user?: Promise<User>;
-  }) {
+  constructor(props?: Partial<PersonalData>) {
     super();
     if (props) Object.assign(this, props);
   }
@@ -60,6 +55,7 @@ export class PersonalData extends BaseEntity {
         [key]: this[key],
       },
     });
+    console.log(exist, this[key]);
     if (exist) throw new ConflictException(conflictMsg);
   }
 }

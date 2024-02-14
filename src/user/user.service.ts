@@ -115,7 +115,6 @@ export class UserService {
     });
     const newPersonalData = new PersonalData({
       ...data.personal_data,
-      phoneNumber: data.personal_data.phone_number,
     });
     const newAddress = new Address({
       ...data.address,
