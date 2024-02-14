@@ -48,7 +48,6 @@ export class ClientsService {
         address: await user.address,
         personal_data: new PersonalDataResponseDto({
           ...personalData,
-          phone_number: personalData.phoneNumber,
         }),
       }),
       company: clientsCompany

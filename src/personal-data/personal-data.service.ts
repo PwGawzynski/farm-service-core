@@ -10,7 +10,7 @@ import { PersonalDataResponseDto } from './dto/response/personalData-response.dt
 @Injectable()
 export class PersonalDataService {
   async update(updateData: UpdatePersonalDataDto) {
-    const { id, name, surname, phone_number } = updateData;
+    const { id, name, surname, phoneNumber } = updateData;
     const oldPersonalData = await PersonalData.findOne({
       where: { id },
     });
@@ -20,10 +20,10 @@ export class PersonalDataService {
     const newPersonalData = new PersonalData({
       name,
       surname,
-      phoneNumber: phone_number,
+      phoneNumber: phoneNumber,
     });
-    console.log(phone_number, oldPersonalData.phoneNumber);
-    if (oldPersonalData.phoneNumber !== phone_number)
+    console.log(phoneNumber, oldPersonalData.phoneNumber);
+    if (oldPersonalData.phoneNumber !== phoneNumber)
       await newPersonalData._shouldNotExist(
         'phoneNumber',
         'Phone number is already in use',
@@ -32,7 +32,7 @@ export class PersonalDataService {
     PersonalData.createQueryBuilder()
       .update(oldPersonalData)
       .set({
-        phoneNumber: phone_number,
+        phoneNumber: phoneNumber,
         name,
         surname,
       })
