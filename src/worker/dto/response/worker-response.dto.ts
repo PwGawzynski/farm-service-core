@@ -2,14 +2,12 @@ import { Exclude, Expose } from 'class-transformer';
 import { PersonalDataResponseDto } from '../../../personal-data/dto/response/personalData-response.dto';
 import { AddressResponseDto } from '../../../address/dto/response/address.response.dto';
 import { Position, Status } from '../../../../FarmServiceApiTypes/Worker/Enums';
+import { UserResponseDto } from '../../../user/dto/response/user-response.dto';
 
 export class WorkerResponseWhiteList {
   constructor(partial: Partial<WorkerResponseDto>) {
     Object.assign(this, partial);
   }
-  @Expose()
-  id: string;
-
   @Expose()
   personalData: PersonalDataResponseDto;
 
@@ -35,13 +33,13 @@ export class WorkerResponseDto extends WorkerResponseWhiteList {
 }
 
 @Exclude()
-export class WorkerIdResponseDto {
-  constructor(partial: Partial<WorkerIdResponseDto>) {
+export class WorkerInfoDto {
+  constructor(partial: Partial<WorkerInfoDto>) {
     Object.assign(this, partial);
   }
   @Expose()
-  id: string;
+  assigned: boolean;
 
   @Expose()
-  companyId: string;
+  user: UserResponseDto;
 }
