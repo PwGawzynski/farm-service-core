@@ -36,3 +36,15 @@ export const GetOwnedCompany = createParamDecorator(
     return company;
   },
 );
+export const GetWorker = createParamDecorator(
+  async (data: unknown, ctx: ExecutionContext) => {
+    const user = ctx.switchToHttp().getRequest().user;
+    if (!(user instanceof User)) {
+      printWarnToConsole('REQ.USER IS UNDEFENDED', 'GET_WORKER');
+      throw new InternalServerErrorException(undefined, 'Something went wrong');
+    }
+    const worker = await user.worker;
+    if (!worker) throw new ConflictException('Causer is not a  worker');
+    return worker;
+  },
+);
