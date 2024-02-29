@@ -2,13 +2,8 @@ import { Body, Controller, Get, Post, Sse } from '@nestjs/common';
 import { WorkerService } from './worker.service';
 import { Owner, Worker as WorkerRole } from '../../decorators/auth.decorators';
 import { CreateWorkerDto } from './dto/create-worker.dto';
-import {
-  GetOwnedCompany,
-  GetUser,
-  GetWorker,
-} from '../../decorators/user.decorator';
+import { GetOwnedCompany, GetUser } from '../../decorators/user.decorator';
 import { Company } from '../company/entities/company.entity';
-import { Worker } from './entities/worker.entity';
 import { User } from '../user/entities/user.entity';
 @Controller('worker')
 export class WorkerController {
@@ -25,12 +20,12 @@ export class WorkerController {
 
   @Get()
   @WorkerRole()
-  async getInfo(@GetWorker() worker: Worker) {
-    return this.workerService.getInfo(worker);
+  async getInfo(@GetUser() user: User) {
+    return this.workerService.getInfo(user);
   }
 
-  @Sse('sse/status')
-  status(@GetUser() user: User) {
-    return this.workerService.status(user);
+  @Sse('sse/info')
+  info(@GetUser() user: User) {
+    return this.workerService.info(user);
   }
 }
