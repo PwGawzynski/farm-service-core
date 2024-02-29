@@ -2,7 +2,6 @@ import { Exclude, Expose } from 'class-transformer';
 import { PersonalDataResponseDto } from '../../../personal-data/dto/response/personalData-response.dto';
 import { AddressResponseDto } from '../../../address/dto/response/address.response.dto';
 import { Position, Status } from '../../../../FarmServiceApiTypes/Worker/Enums';
-import { UserResponseDto } from '../../../user/dto/response/user-response.dto';
 
 export class WorkerResponseWhiteList {
   constructor(partial: Partial<WorkerResponseDto>) {
@@ -33,13 +32,13 @@ export class WorkerResponseDto extends WorkerResponseWhiteList {
 }
 
 @Exclude()
-export class WorkerInfoDto {
-  constructor(partial: Partial<WorkerInfoDto>) {
+export class WorkerIdResponseDto {
+  constructor(partial: Partial<WorkerIdResponseDto>) {
     Object.assign(this, partial);
   }
   @Expose()
-  assigned: boolean;
+  userId: string;
 
   @Expose()
-  user: UserResponseDto;
+  workerData?: WorkerResponseDto;
 }
