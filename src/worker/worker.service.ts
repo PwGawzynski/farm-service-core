@@ -6,10 +6,13 @@ import {
   ResponseCode,
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
-import { WorkerResponseDto } from './dto/response/worker-response.dto';
+import {
+  WorkerIdResponseDto,
+  WorkerResponseDto,
+} from './dto/response/worker-response.dto';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
-import { concatMap, filter, interval, take } from 'rxjs';
+import { concatMap, filter, interval, take, takeUntil, timeout } from 'rxjs';
 import { User } from '../user/entities/user.entity';
 
 @Injectable()
@@ -42,16 +45,28 @@ export class WorkerService {
     } as ResponseObject<WorkerResponseDto>;
   }
 
-  async getInfo(worker: Worker) {
+  async getInfo(user: User) {
+    const worker = await Worker.findOne({
+      where: { user: { id: user.id } },
+    });
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this.createWorkerResponseDto(worker),
-    } as ResponseObject<WorkerResponseDto>;
+      payload: {
+        workerData: worker && (await this.createWorkerResponseDto(worker)),
+        userId: user.id,
+      },
+    } as ResponseObject<WorkerIdResponseDto>;
   }
 
-  async status(user: User) {
+  async info(user: User) {
+    const timeout$ = interval(60000).pipe(
+      concatMap(() => {
+        throw Error('Timeout');
+      }),
+    );
     return interval(2000).pipe(
       concatMap(async () => {
+        console.log('TEstSee');
         const worker = await Worker.findOne({
           where: { user: { id: user.id } },
         });
@@ -68,7 +83,9 @@ export class WorkerService {
       filter(
         (result) => JSON.parse(result).code === ResponseCode.ProcessedCorrect,
       ),
-      take(2),
+      takeUntil(timeout$),
+      take(1),
+      timeout(60000),
     );
   }
 }
