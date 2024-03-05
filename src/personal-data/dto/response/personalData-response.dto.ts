@@ -14,9 +14,11 @@ export class PersonalDataResponseWhiteList {
 
 @Exclude()
 export class PersonalDataResponseDto extends PersonalDataResponseWhiteList {
+  @Exclude()
   id: string;
-
   constructor(partial: Partial<PersonalDataResponseDto>) {
+    // due to sse causes exclude dont work
+    if (partial) partial.id = undefined;
     super(partial);
     Object.assign(this, partial);
   }
