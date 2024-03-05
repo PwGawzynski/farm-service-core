@@ -23,6 +23,7 @@ export class WorkerService {
     const address = await user.address;
     const personalData = await user.personalData;
     return new WorkerResponseDto({
+      id: worker.id,
       status: worker.status,
       position: worker.position,
       email: account.email,
