@@ -8,6 +8,9 @@ export class WorkerResponseWhiteList {
     Object.assign(this, partial);
   }
   @Expose()
+  id: string;
+
+  @Expose()
   personalData: PersonalDataResponseDto;
 
   @Expose()

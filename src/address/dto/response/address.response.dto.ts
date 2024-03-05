@@ -29,7 +29,11 @@ export class AddressWhiteList {
 
 @Exclude()
 export class AddressResponseDto extends AddressWhiteList {
+  @Exclude()
+  id: string;
   constructor(partial?: Partial<AddressResponseDto>) {
+    // due to on sse it's not work
+    if (partial) partial.id = undefined;
     super(partial);
     Object.assign(this, partial);
   }
