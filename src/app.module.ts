@@ -20,6 +20,8 @@ import { ClientsModule } from './clients/clients.module';
 import { ClientsCompanyModule } from './clients_company/clients_company.module';
 import { WorkerModule } from './worker/worker.module';
 import { MachineModule } from './machine/machine.module';
+import { FieldModule } from './field/field.module';
+import { FieldAddressModule } from './field-address/field-address.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { MachineModule } from './machine/machine.module';
     ClientsCompanyModule,
     WorkerModule,
     MachineModule,
+    FieldModule,
+    FieldAddressModule,
   ],
   controllers: [AppController],
   providers: [
