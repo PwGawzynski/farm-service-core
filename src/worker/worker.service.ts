@@ -14,6 +14,7 @@ import { AddressResponseDto } from '../address/dto/response/address.response.dto
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { concatMap, filter, interval, take, takeUntil, timeout } from 'rxjs';
 import { User } from '../user/entities/user.entity';
+import { UpdateWorkerStatusOrPositionDto } from './dto/update-worker.dto';
 
 @Injectable()
 export class WorkerService {
@@ -88,5 +89,35 @@ export class WorkerService {
       take(1),
       timeout(60000),
     );
+  }
+
+  async getAll(company: Company) {
+    const workers = await company.workers;
+    if (!workers || workers.length === 0)
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: [],
+      } as ResponseObject<WorkerResponseDto[]>;
+    const res = await Promise.all(
+      workers?.map(
+        async (worker) => await this.createWorkerResponseDto(worker),
+      ),
+    );
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: res,
+    } as ResponseObject<WorkerResponseDto[]>;
+  }
+
+  async updateStatusOrPosition(updateData: UpdateWorkerStatusOrPositionDto) {
+    const { worker, status, position } = updateData;
+    console.log(updateData);
+    if (status !== undefined) worker.status = status;
+    if (position !== undefined) worker.position = position;
+    worker.save();
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this.createWorkerResponseDto(worker),
+    } as ResponseObject<WorkerResponseDto>;
   }
 }
