@@ -48,3 +48,15 @@ export const GetWorker = createParamDecorator(
     return worker;
   },
 );
+export const GetClient = createParamDecorator(
+  async (data: unknown, ctx: ExecutionContext) => {
+    const user = ctx.switchToHttp().getRequest().user;
+    if (!(user instanceof User)) {
+      printWarnToConsole('REQ.USER IS UNDEFENDED', 'GET_WORKER');
+      throw new InternalServerErrorException(undefined, 'Something went wrong');
+    }
+    const client = await user.client;
+    if (!client) throw new ConflictException('Causer is not a  worker');
+    return client;
+  },
+);
