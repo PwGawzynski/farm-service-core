@@ -20,6 +20,9 @@ export class FieldResponseWhiteList {
 
   @Expose()
   address: FieldAddressResponseDto;
+
+  @Expose()
+  nameLabel: string;
 }
 
 @Exclude()
