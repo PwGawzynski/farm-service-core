@@ -30,6 +30,12 @@ export class FieldController {
     return this.fieldService.getOnePlId(PLid);
   }
 
+  @Get('all')
+  @Owner()
+  async getAll(@Query('client') client: string) {
+    return this.fieldService.getAllByClient(client);
+  }
+
   @Get()
   @Owner()
   async getOne(@Query('id') id: string) {
