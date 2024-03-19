@@ -34,6 +34,11 @@ export class CreateFieldDto {
   @IsNotEmpty({ message: 'Polish system id must be not empty strings' })
   polishSystemId: string;
 
+  @IsString({ message: 'Name must be a string' })
+  @Length(FieldConstants.NAME_MIN_LEN, FieldConstants.NAME_MAX_LEN)
+  @IsNotEmpty({ message: 'Name must be not empty strings' })
+  nameLabel: string;
+
   @IsNumber({
     maxDecimalPlaces: FieldConstants.AREA_MAX_DECIMAL_PLACES,
   })
