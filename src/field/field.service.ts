@@ -97,14 +97,22 @@ export class FieldService {
     };
   }
 
+  private async _prepareResponsePayload(
+    filed: Field,
+    filedAddress: FieldAddress,
+  ) {
+    // filed.address = undefined;
+    return new FieldResponseDto({
+      ...filed,
+      address: new FieldAddressResponseDto(filedAddress),
+    });
+  }
+
   private async _prepareResponse(filed: Field, filedAddress: FieldAddress) {
     // filed.address = undefined;
     return {
       code: ResponseCode.ProcessedWithoutConfirmationWaiting,
-      payload: new FieldResponseDto({
-        ...filed,
-        address: new FieldAddressResponseDto(filedAddress),
-      }),
+      payload: await this._prepareResponsePayload(filed, filedAddress),
     } as ResponseObject<FieldResponseDto>;
   }
 
@@ -239,5 +247,24 @@ export class FieldService {
     return {
       code: ResponseCode.ProcessedCorrect,
     } as ResponseObject;
+  }
+
+  async getAllByClient(id: string) {
+    if (id === undefined)
+      throw new NotFoundException('Cannot find client with given id');
+    const client = await Client.findOne({
+      where: { id },
+    });
+    if (!client)
+      throw new NotFoundException('Cannot find client with given id');
+    const fields = await (await client.user).ownedFields;
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await Promise.all(
+        fields.map(async (field) =>
+          this._prepareResponsePayload(field, await field.address),
+        ),
+      ),
+    } as ResponseObject<FieldResponseDto[]>;
   }
 }
