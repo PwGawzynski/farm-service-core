@@ -49,6 +49,13 @@ export class Field extends BaseEntity {
   })
   dateOfCollectionData: Date;
 
+  @Column({
+    type: 'varchar',
+    length: FieldConstants.NAME_MAX_LEN,
+    nullable: false,
+  })
+  nameLabel: string;
+
   @OneToOne(() => FieldAddress, (fieldAddress) => fieldAddress.field, {
     nullable: false,
     onDelete: 'CASCADE',
