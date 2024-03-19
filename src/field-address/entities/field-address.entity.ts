@@ -42,13 +42,6 @@ export class FieldAddress extends BaseEntity {
   })
   county: string;
 
-  /*@Column({
-    type: 'varchar',
-    length: FieldAddressConstants.POSTAL_CODE_LEN,
-    nullable: false,
-  })
-  postalCode: string;*/
-
   @Column({
     type: 'varchar',
     length: FieldAddressConstants.LATITUDE_MAX_LEN,
