@@ -27,7 +27,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const { httpAdapter } = this.httpAdapterHost;
 
     const ctx = host.switchToHttp();
-    printWarnToConsole(`CAUGHT ERROR`, 'GlobalExceptionFilter');
+    printWarnToConsole(
+      `CAUGHT ERROR`,
+      'GlobalExceptionFilter, when processing: ' +
+        ctx.getRequest().url +
+        ' ' +
+        ctx.getRequest().headers['Authorization'],
+    );
     /**
      *  Checks exception type and send bask ResponseObject with error code and payload if error is HttpException type,
      *  or ResponseObject with only error code, in case of the others error types, to prevent app structure data leaking
