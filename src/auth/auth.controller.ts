@@ -16,7 +16,7 @@ export class AuthController {
    */
   @Post('login')
   @Public()
-  login(@Body() userPayload: UserDataDto) {
+  async login(@Body() userPayload: UserDataDto) {
     return this.authService.login(userPayload);
   }
 
@@ -28,7 +28,7 @@ export class AuthController {
   @Public()
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh')
-  refreshToken(@Req() req: Request) {
+  async refreshToken(@Req() req: Request) {
     return this.authService.refreshToken(req);
   }
 }
