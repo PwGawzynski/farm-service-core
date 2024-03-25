@@ -26,12 +26,70 @@ import {
 
 @Injectable()
 export class AuthService {
+  private static secret: string;
+  private static refreshSecret: string;
+  private static accessTokenExpirationTime: string;
+  private static refreshTokenExpirationTime: string;
+  private static maxRegisteredDevicesCount: string;
   constructor(
     private jwtService: JwtService,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    const {
+      secret,
+      refresh,
+      accessTokenExpirationTime,
+      refreshTokenExpirationTime,
+      maxRegisteredDevicesCount,
+    } = this.prepareConfig();
+    if (!secret) throw new Error('No secret sign');
+    AuthService.secret = secret;
+    if (!refresh) throw new Error('No refresh sign');
+    AuthService.refreshSecret = refresh;
+    if (!accessTokenExpirationTime)
+      throw new Error('No access token expiration time');
+    AuthService.accessTokenExpirationTime = accessTokenExpirationTime;
+    if (!refreshTokenExpirationTime)
+      throw new Error('No refresh token expiration time');
+    AuthService.refreshTokenExpirationTime = refreshTokenExpirationTime;
+    if (!maxRegisteredDevicesCount)
+      throw new Error('No max registered devices count');
+    AuthService.maxRegisteredDevicesCount = maxRegisteredDevicesCount;
+  }
+
+  /**
+   * This method retrieves configuration values from the environment variables.
+   * It fetches the secret sign, refresh sign, access token expiration time, refresh token expiration time, and maximum registered devices count.
+   *
+   * @returns {Object} An object containing the following properties:
+   * - secret: The secret sign used for JWT signing.
+   * - refresh: The refresh sign used for JWT signing.
+   * - accessTokenExpirationTime: The expiration time for access tokens.
+   * - refreshTokenExpirationTime: The expiration time for refresh tokens.
+   * - maxRegisteredDevicesCount: The maximum number of devices that can be registered per user.
+   */
+  private prepareConfig() {
+    const secret = this.configService.get<string>('secretSign');
+    const refresh = this.configService.get<string>('refreshSign');
+    const accessTokenExpirationTime = this.configService.get<string>(
+      'accessTokenExpirationTime',
+    );
+    const refreshTokenExpirationTime = this.configService.get<string>(
+      'refreshTokenExpirationTime',
+    );
+    const maxRegisteredDevicesCount = this.configService.get<string>(
+      'maxRegisteredDevicesCount',
+    );
+    return {
+      secret,
+      refresh,
+      accessTokenExpirationTime,
+      refreshTokenExpirationTime,
+      maxRegisteredDevicesCount,
+    };
+  }
 
   /**
    * Used to validate given login & password with stored in db user data
@@ -64,18 +122,13 @@ export class AuthService {
     const toRemove = tokens.filter((token) => {
       return (
         new Date().getTime() - token.createdAt.getTime() >
-        parseInt(
-          this.configService.get<string>('refreshTokenExpirationTime') ||
-            '21600000',
-        )
+        parseInt(AuthService.refreshTokenExpirationTime)
       );
     });
     toRemove.forEach((token) => token.remove());
     if (
       tokens.length - toRemove.length >
-      parseInt(
-        this.configService.get<string>('maxRegisteredDevicesCount') || '180m',
-      )
+      parseInt(AuthService.maxRegisteredDevicesCount)
     )
       throw new HttpException(
         'The maximum numbers of active devices has been Violated',
@@ -103,11 +156,16 @@ export class AuthService {
   }
 
   /**
-   * This method creates Access and Refresh tokens
-   * @param userLogin -- user login string
-   * @param userId -- UserEntity(db) id
-   * @param refreshTokenId -- TokenEntity(db) id
-   * @return array of promised access token and refresh token
+   * This method is used to create access and refresh tokens for a user.
+   *
+   * @param {string} userLogin - The login of the user.
+   * @param {string} userId - The ID of the user.
+   * @param {string} refreshTokenId - The ID of the refresh token.
+   *
+   * @returns {Promise<Array>} A promise that resolves to an array containing the following:
+   * - The access token.
+   * - The refresh token.
+   * - The device ID.
    */
   async createTokens(
     userLogin: string,
@@ -123,34 +181,31 @@ export class AuthService {
       deviceId: uuid(),
       refreshTokenId,
     } as RefreshTokenPayload;
-    //TODO swap to config
     return Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('secretSign'),
-        expiresIn: this.configService.get<string>('accessTokenExpirationTime'),
+        secret: AuthService.secret,
+        expiresIn: AuthService.accessTokenExpirationTime,
       }),
       this.jwtService.signAsync(refreshPayload, {
-        secret: this.configService.get<string>('refreshSign'),
-        expiresIn: parseInt(
-          this.configService.get<string>('refreshTokenExpirationTime') ||
-            '21600000',
-        ),
+        secret: AuthService.refreshSecret,
+        expiresIn: parseInt(AuthService.refreshTokenExpirationTime),
       }),
+      refreshPayload.deviceId,
     ]);
   }
 
-  async checkDeviceId(plainDeviceId: string, hashed: string) {
+  /* async checkDeviceId(plainDeviceId: string, hashed: string) {
     return bcrypt
       .compare(plainDeviceId, hashed)
       .then((result) => {
-        console.log(result, hashed);
+        //console.log(result, hashed);
         if (result) return hashed;
         return false;
       })
       .catch((e) => {
         throw e;
       });
-  }
+  }*/
 
   /**
    * login operation driver method
@@ -164,14 +219,14 @@ export class AuthService {
     const account = await validUser.account;
     const accessEntity = new RefreshToken();
 
-    const [accessToken, refreshToken] = await this.createTokens(
+    const [accessToken, refreshToken, deviceID] = await this.createTokens(
       account.email,
       validUser.id,
       accessEntity.id,
     );
 
     await this.remOldRefreshTokens(await validUser.tokens);
-    accessEntity.deviceId = await this.hashData(refreshToken);
+    accessEntity.deviceId = deviceID;
     accessEntity.user = Promise.resolve(validUser);
     accessEntity.save();
 
@@ -185,12 +240,17 @@ export class AuthService {
   }
 
   /**
-   * Method used to refresh access token
-   * @param req -- express req object
-   * @return response with new access and refresh token
-   * @throws HttpException in case operation failure
+   * This method validates the request by checking the user and their tokens.
+   *
+   * @param {Request} req - The request object.
+   *
+   * @returns {Promise<Object>} A promise that resolves to an object containing the following:
+   * - validUser: The validated user.
+   * - account: The account of the validated user.
+   *
+   * @throws {HttpException} If the user is not found, if the user is not authorized, or if the token is invalid.
    */
-  async refreshToken(req: Request) {
+  async _validateRequest(req: Request) {
     if (!req.user)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const validUser = await this.userService.findOneById(req.user['userId']);
@@ -200,39 +260,33 @@ export class AuthService {
 
     const oldTokensEntity = await RefreshToken.find({
       where: {
-        user: { id: validUser['userId'] },
+        deviceId: req.user['deviceId'],
       },
     });
-    const oldTokenEntity = (
-      await Promise.all(
-        oldTokensEntity.map((t) =>
-          this.checkDeviceId(
-            (req.user as Express.User)['refreshToken'],
-            t.deviceId,
-          ),
-        ),
-      )
-    ).find((result) => typeof result === 'string');
-
-    console.log(oldTokenEntity, 'OTE');
-    if (!oldTokenEntity)
+    if (!oldTokensEntity.length)
       throw new HttpException('Invalid Token', HttpStatus.UNAUTHORIZED);
-    (
-      await RefreshToken.findOne({
-        where: {
-          deviceId: oldTokenEntity,
-        },
-      })
-    )?.remove();
+    oldTokensEntity.forEach((token) => token.remove());
+
+    return { validUser, account };
+  }
+
+  /**
+   * Method used to refresh access token
+   * @param req -- express req object
+   * @return response with new access and refresh token
+   * @throws HttpException in case operation failure
+   */
+  async refreshToken(req: Request) {
+    const { validUser, account } = await this._validateRequest(req);
 
     const newTokenEntity = new RefreshToken();
-    const [accessToken, refreshToken] = await this.createTokens(
+    const [accessToken, refreshToken, deviceID] = await this.createTokens(
       account.email,
       validUser.id,
       newTokenEntity.id,
     );
     newTokenEntity.user = Promise.resolve(validUser);
-    newTokenEntity.deviceId = await this.hashData(refreshToken);
+    newTokenEntity.deviceId = deviceID;
     newTokenEntity.save();
     return {
       code: ResponseCode.ProcessedCorrect,
