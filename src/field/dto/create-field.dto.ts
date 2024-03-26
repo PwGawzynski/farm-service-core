@@ -50,6 +50,7 @@ export class CreateFieldDto {
   /*@IsDateString(undefined, {
     message: getDateFormatDescriptionFor('dateOfCollectionData'),
   })*/
+  @IsOptional()
   @IsNotEmpty({ message: 'date of collection data cannot be empty' })
   dateOfCollectionData: Date;
 
