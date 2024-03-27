@@ -19,6 +19,7 @@ import {
 import { User } from '../user/entities/user.entity';
 import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 import { Client } from '../clients/entities/client.entity';
+import { UpdateFieldDto } from './dto/update-field.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 /*const proj4 = require('proj4')*/ type DataObject = {
   type: 'text' | 'cdata' | string;
@@ -152,12 +153,7 @@ export class FieldService {
     ]);
   }*/
 
-  private async _validateFieldCreation(
-    field: Field,
-    user: User,
-    client: Client | undefined,
-  ) {
-    await field._shouldNotExist();
+  private async _validateBase(user: User, client: Client | undefined) {
     if (user.role == UserRole.Owner && !client)
       throw new ConflictException('Cannot create field without client data');
     else if (user.role == UserRole.Owner && client) {
@@ -166,6 +162,15 @@ export class FieldService {
       if (!clientExists)
         throw new ConflictException('Cannot find client within yours clients');
     }
+  }
+
+  private async _validateFieldCreation(
+    field: Field,
+    user: User,
+    client: Client | undefined,
+  ) {
+    await field._shouldNotExist();
+    await this._validateBase(user, client);
   }
 
   async create(createFieldDto: CreateFieldDto, user: User) {
@@ -266,5 +271,23 @@ export class FieldService {
         ),
       ),
     } as ResponseObject<FieldResponseDto[]>;
+  }
+
+  async edit(updateFieldDto: UpdateFieldDto, user: User) {
+    const client = updateFieldDto.client;
+    const field = updateFieldDto.field;
+    const fieldAddress = new FieldAddress({ ...updateFieldDto.address });
+
+    await this._validateBase(user, client);
+    if (user.role === UserRole.Owner) {
+      field.address = Promise.resolve(fieldAddress);
+      field.area = updateFieldDto.area;
+      field.nameLabel = updateFieldDto.nameLabel;
+      field.polishSystemId = updateFieldDto.polishSystemId;
+    } else if (user.role === UserRole.Client)
+      field.nameLabel = updateFieldDto.nameLabel;
+
+    await field.save();
+    return this._prepareResponse(field, fieldAddress);
   }
 }
