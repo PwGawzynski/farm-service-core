@@ -46,6 +46,7 @@ export class Field extends BaseEntity {
     type: 'timestamp',
     nullable: false,
     name: 'date_of_collection_data',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   dateOfCollectionData: Date;
 
