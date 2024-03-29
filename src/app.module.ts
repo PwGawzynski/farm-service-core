@@ -22,6 +22,7 @@ import { WorkerModule } from './worker/worker.module';
 import { MachineModule } from './machine/machine.module';
 import { FieldModule } from './field/field.module';
 import { FieldAddressModule } from './field-address/field-address.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { FieldAddressModule } from './field-address/field-address.module';
     MachineModule,
     FieldModule,
     FieldAddressModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [
