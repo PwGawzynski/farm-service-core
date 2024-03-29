@@ -15,6 +15,7 @@ import { Client } from '../../clients/entities/client.entity';
 import { Worker } from '../../worker/entities/worker.entity';
 import { Machine } from '../../machine/entities/machine.entity';
 import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
+import { Order } from '../../order/entities/order.entity';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -66,6 +67,9 @@ export class Company extends BaseEntity {
 
   @OneToMany(() => Machine, (machine) => machine.company, { nullable: true })
   machines: Promise<Machine[] | null>;
+
+  @OneToMany(() => Order, (order) => order.company, { nullable: true })
+  orders: Promise<Order[] | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     if (
