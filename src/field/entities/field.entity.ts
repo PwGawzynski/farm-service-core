@@ -4,6 +4,7 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -12,6 +13,7 @@ import { FieldAddress } from '../../field-address/entities/field-address.entity'
 import { ConflictException } from '@nestjs/common';
 import FieldConstants from '../../../FarmServiceApiTypes/Field/Constants';
 import { User } from '../../user/entities/user.entity';
+import { Order } from '../../order/entities/order.entity';
 
 @Entity()
 export class Field extends BaseEntity {
@@ -75,6 +77,9 @@ export class Field extends BaseEntity {
     onDelete: 'CASCADE',
   })
   owner: Promise<User>;
+
+  @ManyToMany(() => Order, (order) => order.fields)
+  orders: Promise<Order[] | null>;
 
   async _shouldNotExist() {
     const exist = await Field.findOne({
