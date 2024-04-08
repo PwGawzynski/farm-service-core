@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Company } from '../company/entities/company.entity';
 import { Order } from './entities/order.entity';
@@ -9,6 +9,7 @@ import {
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { v4 as uuid } from 'uuid';
 import { OrderStatus } from '../../FarmServiceApiTypes/Order/Enums';
+import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -29,7 +30,7 @@ export class OrderService {
   private async _prepareCorrectResponse(order: Order) {
     return {
       code: ResponseCode.ProcessedCorrect,
-      data: await this._prepareResponse(await order),
+      payload: await this._prepareResponse(await order),
     } as ResponseObject<OrderResponseDto>;
   }
 
@@ -65,4 +66,33 @@ export class OrderService {
   remove(id: number) {
     return `This action removes a #${id} order`;
   }*/
+  async getAll(company: Company) {
+    const orders = await company.orders;
+    if (!orders)
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: [],
+      } as ResponseObject<OrderResponseDto[]>;
+    const res = await Promise.all(orders?.map((o) => this._prepareResponse(o)));
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: res,
+    } as ResponseObject<OrderResponseDto[]>;
+  }
+
+  async update(updateData: UpdateOrderDto, company: Company) {
+    const order = updateData.order;
+    const { pricePerUnit, additionalInfo, performanceDate, name } = updateData;
+    if ((await order.company).id !== company.id)
+      throw new ConflictException(
+        'You cannot manage order which bot belonging to yours company',
+      );
+    order.pricePerUnit = pricePerUnit;
+    order.additionalInfo = additionalInfo;
+    order.performanceDate = performanceDate;
+    order.name = name;
+    order.save();
+    console.log(await this._prepareCorrectResponse(order));
+    return await this._prepareCorrectResponse(order);
+  }
 }
