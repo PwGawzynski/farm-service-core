@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Company } from '../../company/entities/company.entity';
 import { ConflictException } from '@nestjs/common';
+import { MachineConstants } from '../../../FarmServiceApiTypes/Machine/Constants';
 
 @Entity()
 export class Machine extends BaseEntity {
@@ -20,14 +21,22 @@ export class Machine extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    length: 100,
+    length: MachineConstants.NAME_MAX_LEN,
     nullable: false,
   })
   name: string;
 
   @Column({
+    type: 'timestamp',
+    default: null,
+    name: 'deleted_at',
+    nullable: true,
+  })
+  deletedAt?: Date;
+
+  @Column({
     type: 'varchar',
-    length: 20,
+    length: MachineConstants.LICENCE_PLATE_MAX_LEN,
     nullable: false,
   })
   @Index('UNIQ_LICENSE_PLATE', { unique: true })
