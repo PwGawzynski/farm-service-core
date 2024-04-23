@@ -3,6 +3,7 @@ import {
   ValidationOptions,
   ValidationArguments,
 } from 'class-validator';
+import { Equal } from 'typeorm';
 
 export function FindOrReject(
   baseClass: new () => any,
@@ -25,7 +26,7 @@ export function FindOrReject(
           if (!Array.isArray(relatedValue)) {
             classInstance = await baseClass.findOne({
               where: {
-                id: relatedValue,
+                id: Equal(relatedValue),
               },
             });
           } else {
@@ -34,7 +35,7 @@ export function FindOrReject(
                 async (oneElement) =>
                   await baseClass.findOne({
                     where: {
-                      id: oneElement,
+                      id: Equal(oneElement),
                     },
                   }),
               ),

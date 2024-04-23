@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   JoinColumn,
   OneToMany,
   OneToOne,
@@ -54,7 +55,7 @@ export class User extends BaseEntity {
   @OneToOne(() => PersonalData, (personalData) => personalData.user, {
     nullable: false,
   })
-  @JoinColumn({ name: 'personal_data' })
+  @JoinColumn({ name: 'personalData' })
   personalData: Promise<PersonalData>;
 
   @OneToOne(() => Address, (address) => address.user, {
@@ -93,7 +94,7 @@ export class User extends BaseEntity {
   async _shouldNotExist<T extends keyof User>(key: T, conflictMsg: string) {
     const exist = await User.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     if (exist) throw new ConflictException(conflictMsg);

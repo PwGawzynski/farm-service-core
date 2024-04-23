@@ -6,12 +6,13 @@ import {
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { AddressResponseDto } from './dto/response/address.response.dto';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class AddressService {
   async update(updateData: UpdateAddressDto) {
     const { id, ...address } = updateData;
-    const oldAddress = await Address.findOne({ where: { id } });
+    const oldAddress = await Address.findOne({ where: { id: Equal(id) } });
     if (!oldAddress) throw new BadRequestException('Address not exist');
     Address.createQueryBuilder()
       .update(oldAddress)

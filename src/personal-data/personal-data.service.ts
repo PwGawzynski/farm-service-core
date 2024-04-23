@@ -6,13 +6,14 @@ import {
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { PersonalDataResponseDto } from './dto/response/personalData-response.dto';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class PersonalDataService {
   async update(updateData: UpdatePersonalDataDto) {
     const { id, name, surname, phoneNumber } = updateData;
     const oldPersonalData = await PersonalData.findOne({
-      where: { id },
+      where: { id: Equal(id) },
     });
     if (!oldPersonalData)
       throw new BadRequestException('Cannot Find personal data');
