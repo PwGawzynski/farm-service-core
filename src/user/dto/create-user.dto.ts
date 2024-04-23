@@ -50,7 +50,7 @@ export class CreateUserDto {
   @IsDefined()
   @ValidateNested()
   @Type(() => CreatePersonalDataDto)
-  personal_data: CreatePersonalDataDto;
+  personalData: CreatePersonalDataDto;
 
   @IsDefined()
   @ValidateNested()
