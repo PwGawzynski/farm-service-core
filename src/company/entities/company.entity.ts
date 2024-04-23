@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   Index,
   JoinColumn,
   OneToMany,
@@ -16,6 +17,7 @@ import { Worker } from '../../worker/entities/worker.entity';
 import { Machine } from '../../machine/entities/machine.entity';
 import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
 import { Order } from '../../order/entities/order.entity';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -71,6 +73,9 @@ export class Company extends BaseEntity {
   @OneToMany(() => Order, (order) => order.company, { nullable: true })
   orders: Promise<Order[] | null>;
 
+  @OneToMany(() => Task, (task) => task.company, { nullable: true })
+  tasks: Promise<Task[] | null>;
+
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     if (
       !(
@@ -82,7 +87,7 @@ export class Company extends BaseEntity {
       throw new Error('Invalid key type');
     const exist = await Company.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     console.log((await exist?.owner)?.id, 'shouldNot', key, this[key]);
