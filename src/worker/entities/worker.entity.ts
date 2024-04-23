@@ -2,8 +2,11 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   JoinColumn,
+  JoinTable,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -11,6 +14,7 @@ import { User } from '../../user/entities/user.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Position, Status } from '../../../FarmServiceApiTypes/Worker/Enums';
 import { ConflictException } from '@nestjs/common';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity()
 export class Worker extends BaseEntity {
@@ -32,8 +36,9 @@ export class Worker extends BaseEntity {
   @JoinColumn()
   company: Promise<Company>;
 
-  /*@OneToMany(() => Task, (task) => task.worker, { nullable: true })
-  tasks?: Promise<Task[]>;*/
+  @OneToMany(() => Task, (task) => task.worker, { nullable: true })
+  @JoinTable({ name: 'worker_tasks' })
+  tasks?: Promise<Task[]>;
 
   @Column({
     type: 'enum',
@@ -53,9 +58,10 @@ export class Worker extends BaseEntity {
   hiredAt: Date;
 
   async _shouldNotExist<T extends keyof this>(key: T) {
+    console.log(this[key], 'KURA', Equal(this[key]));
     const exist = await Worker.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     if (exist)
