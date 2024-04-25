@@ -131,9 +131,10 @@ export class AuthService {
     const toRemove = tokens.filter((token) => {
       return (
         new Date().getTime() - token.createdAt.getTime() >
-        AuthService.refreshTokenExpirationTime
+        AuthService.refreshTokenExpirationTime * 1000
       );
     });
+    console.log(toRemove, 'TR');
     toRemove.forEach((token) => token.remove());
     if (tokens.length - toRemove.length > AuthService.maxRegisteredDevicesCount)
       throw new HttpException(
