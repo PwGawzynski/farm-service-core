@@ -33,7 +33,7 @@ export class TaskSessionService {
   }
 
   async findOpen(t: Task) {
-    return TaskSession.find({
+    return TaskSession.findOne({
       where: {
         task: { id: Equal(t.id) },
         closedAt: IsNull(),
@@ -41,25 +41,22 @@ export class TaskSessionService {
     });
   }
 
-  async findOrThrow(task: Task): Promise<TaskSession> {
-    const t = await TaskSession.findOne({
-      where: {
-        task: { id: task.id },
-        closedAt: IsNull(),
-      },
-    });
-    if (!t) {
-      throw new Error('Task session not found');
-    }
-    return t;
-  }
-
   async close(task: Task) {
-    const session = await this.findOrThrow(task);
+    const session = await this.findOpen(task);
     if (session) {
       session.closedAt = new Date();
       session.save();
       return session;
     }
+    throw new Error('Task session not found');
+  }
+
+  async closeSession(session: TaskSession) {
+    if (session) {
+      session.closedAt = new Date();
+      session.save();
+      return session;
+    }
+    throw new Error('Task session not found');
   }
 }

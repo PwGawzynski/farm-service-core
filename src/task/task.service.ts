@@ -29,7 +29,68 @@ export class TaskService {
     private readonly TaskSessionService: TaskSessionService,
   ) {}
 
-  private async validate(createTaskDto: CreateTaskDto, company: Company) {
+  /**
+   * -----------------------------HELPER METHODS--------------------------------
+   */
+
+  private async updateSessions(
+    task: Task,
+    updatedSession: TaskSession | undefined,
+  ) {
+    const oldSessions = await task.sessions;
+    if (!oldSessions?.length && updatedSession) {
+      task.sessions = Promise.resolve([updatedSession]);
+    } else if (updatedSession && oldSessions?.length) {
+      task.sessions = Promise.resolve(
+        oldSessions
+          .filter((s) => s.id !== updatedSession.id)
+          .concat(updatedSession),
+      );
+    }
+  }
+
+  private async produceResponseTaskObject(t: Task) {
+    const sessions = await t.sessions;
+    return {
+      id: t.id,
+      isDone: t.isDone,
+      type: t.type,
+      createdAt: t.createdAt,
+      openedAt: t.openedAt,
+      closedAt: t.closedAt,
+      lastPausedAt: t.lastPausedAt,
+      performanceDate: t.performanceDate,
+      field: await this.FieldService.prepareResponseDto(
+        await t.field,
+        await (
+          await t.field
+        ).address,
+      ),
+      worker: await this.WorkerService.prepareCreateWorkerResponseDto(
+        await t.worker,
+      ),
+      machine: await this.MachineService.prepareResponseDto(await t.machine),
+      sessions: sessions?.map((s) =>
+        this.TaskSessionService.prepareResponseDto(s),
+      ),
+    } as TaskResponseDto;
+  }
+
+  /**
+   * -----------------------------VALIDATION METHODS--------------------------------
+   */
+
+  async findAndValidate(taskId: string, worker: Worker) {
+    const task = await Task.findOne({ where: { id: Equal(taskId) } });
+    const exist = (await worker.tasks)?.find((t) => t.id === taskId);
+    if (!exist || !task) throw new ConflictException('Task not found');
+    return task;
+  }
+
+  private async onCreateValidate(
+    createTaskDto: CreateTaskDto,
+    company: Company,
+  ) {
     console.log('test');
     const { worker, order, field } = createTaskDto;
     const alreadyExist = await Task.findOne({
@@ -62,37 +123,39 @@ export class TaskService {
       );
   }
 
-  private async produceResponseTaskObject(t: Task) {
-    const sessions = await t.sessions;
-    return {
-      id: t.id,
-      isDone: t.isDone,
-      type: t.type,
-      createdAt: t.createdAt,
-      openedAt: t.openedAt,
-      closedAt: t.closedAt,
-      lastPausedAt: t.lastPausedAt,
-      performanceDate: t.performanceDate,
-      field: await this.FieldService.prepareResponseDto(
-        await t.field,
-        await (
-          await t.field
-        ).address,
-      ),
-      worker: await this.WorkerService.prepareCreateWorkerResponseDto(
-        await t.worker,
-      ),
-      machine: await this.MachineService.prepareResponseDto(await t.machine),
-      sessions: sessions?.map((s) =>
-        this.TaskSessionService.prepareResponseDto(s),
-      ),
-    } as TaskResponseDto;
+  private async onGetByCompanyValidate(
+    orderId: string,
+    company: Company,
+  ): Promise<Order> {
+    const order = await Order.findOne({
+      where: { id: Equal(orderId) },
+    });
+    if (!order) throw new ConflictException('Order not found');
+    const isOrderOfCompany = (await order.company).id === company.id;
+    if (!isOrderOfCompany)
+      throw new ConflictException('Order not found in your company');
+    return order;
   }
+
+  private async onDeleteValidate(id: string, company: Company): Promise<Task> {
+    const task = await Task.findOne({
+      where: { id: Equal(id) },
+    });
+    if (!task) throw new ConflictException('Task not found');
+    const isTaskOfCompany = (await task.company).id === company.id;
+    if (!isTaskOfCompany)
+      throw new ConflictException('Task not found in your company');
+    return task;
+  }
+
+  /**
+   * -----------------------------CRUD METHODS--------------------------------
+   */
 
   async create(createTaskDto: CrateTaskCollection, company: Company) {
     await Promise.all(
       createTaskDto.tasks.map((task) => {
-        return this.validate(task as unknown as CreateTaskDto, company);
+        return this.onCreateValidate(task as unknown as CreateTaskDto, company);
       }),
     );
     const { tasks } = createTaskDto;
@@ -118,22 +181,8 @@ export class TaskService {
     } as ResponseObject<TaskResponseDto[]>;
   }
 
-  private async getAll_findAndValidate(
-    orderId: string,
-    company: Company,
-  ): Promise<Order> {
-    const order = await Order.findOne({
-      where: { id: Equal(orderId) },
-    });
-    if (!order) throw new ConflictException('Order not found');
-    const isOrderOfCompany = (await order.company).id === company.id;
-    if (!isOrderOfCompany)
-      throw new ConflictException('Order not found in your company');
-    return order;
-  }
-
   async getByCompany(company: Company, orderId: string) {
-    await this.getAll_findAndValidate(orderId, company);
+    await this.onGetByCompanyValidate(orderId, company);
     const tasks = await Task.find({
       where: { order: { id: Equal(orderId) } },
     });
@@ -145,74 +194,12 @@ export class TaskService {
     } as ResponseObject<TaskResponseDto[]>;
   }
 
-  private async delete_findAndValidate(
-    id: string,
-    company: Company,
-  ): Promise<Task> {
-    const task = await Task.findOne({
-      where: { id: Equal(id) },
-    });
-    if (!task) throw new ConflictException('Task not found');
-    const isTaskOfCompany = (await task.company).id === company.id;
-    if (!isTaskOfCompany)
-      throw new ConflictException('Task not found in your company');
-    return task;
-  }
-
   async delete(id: string, company: Company) {
-    const task = await this.delete_findAndValidate(id, company);
+    const task = await this.onDeleteValidate(id, company);
     task.remove();
     return {
       code: ResponseCode.ProcessedCorrect,
     } as ResponseObject;
-  }
-
-  async workerTasks(worker: Worker) {
-    let prevTaskLen = 0;
-    return interval(30000).pipe(
-      startWith(0),
-      concatMap(async () => {
-        const tasks = await Task.find({
-          where: { worker: { id: Equal(worker.id) } },
-        });
-        if (tasks.length) {
-          if (prevTaskLen !== tasks.length) {
-            console.log(prevTaskLen, 'TEST');
-            prevTaskLen = tasks.length;
-            return JSON.stringify({
-              code: ResponseCode.ProcessedCorrect,
-              payload: await Promise.all(
-                tasks.map(async (t) => await this.produceResponseTaskObject(t)),
-              ),
-            } as ResponseObject<TaskResponseDto[]>);
-          }
-        }
-      }),
-      timeout(1000 * 60 * 60 * 24),
-    );
-  }
-
-  private async updateSessions(
-    task: Task,
-    updatedSession: TaskSession | undefined,
-  ) {
-    const oldSessions = await task.sessions;
-    if (!oldSessions?.length && updatedSession) {
-      task.sessions = Promise.resolve([updatedSession]);
-    } else if (updatedSession && oldSessions?.length) {
-      task.sessions = Promise.resolve(
-        oldSessions
-          .filter((s) => s.id !== updatedSession.id)
-          .concat(updatedSession),
-      );
-    }
-  }
-
-  async findAndValidate(taskId: string, worker: Worker) {
-    const task = await Task.findOne({ where: { id: Equal(taskId) } });
-    const exist = (await worker.tasks)?.find((t) => t.id === taskId);
-    if (!exist || !task) throw new ConflictException('Task not found');
-    return task;
   }
 
   async startTask(taskId: string, worker: Worker) {
@@ -250,25 +237,53 @@ export class TaskService {
   async pause(taskId: string, worker: Worker) {
     const task = await this.findAndValidate(taskId, worker);
     if (!task.openedAt || task.isDone || task.closedAt)
-      // TODO move all strings to JSON
       throw new ConflictException(
         "Cannot pause task with hasn't been opened, or is already done",
       );
-    try {
-      await this.TaskSessionService.open(task);
-      return {
-        code: ResponseCode.ProcessedCorrect,
-        payload: await this.produceResponseTaskObject(task),
-      } as ResponseObject<TaskResponseDto>;
-    } catch {
-      const updatedSession = await this.TaskSessionService.close(task);
+    const hasOpenedSession = (await task.sessions)?.find(
+      (s) => s.openedAt && !s.closedAt,
+    );
+    if (hasOpenedSession) {
+      const closed = await this.TaskSessionService.closeSession(
+        hasOpenedSession,
+      );
       task.lastPausedAt = new Date();
       task.save();
-      await this.updateSessions(task, updatedSession);
-      return {
-        code: ResponseCode.ProcessedCorrect,
-        payload: await this.produceResponseTaskObject(task),
-      } as ResponseObject<TaskResponseDto>;
+      await this.updateSessions(task, closed);
+    } else {
+      const opened = await this.TaskSessionService.open(task);
+      await this.updateSessions(task, opened);
     }
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this.produceResponseTaskObject(task),
+    } as ResponseObject<TaskResponseDto>;
+  }
+
+  /**
+   * -----------------------------SSE METHODS--------------------------------
+   */
+  async workerTasks(worker: Worker) {
+    let prevTaskLen = 0;
+    return interval(30000).pipe(
+      startWith(0),
+      concatMap(async () => {
+        const tasks = await Task.find({
+          where: { worker: { id: Equal(worker.id) } },
+        });
+        if (tasks.length) {
+          if (prevTaskLen !== tasks.length) {
+            prevTaskLen = tasks.length;
+            return JSON.stringify({
+              code: ResponseCode.ProcessedCorrect,
+              payload: await Promise.all(
+                tasks.map(async (t) => await this.produceResponseTaskObject(t)),
+              ),
+            } as ResponseObject<TaskResponseDto[]>);
+          }
+        }
+      }),
+      timeout(1000 * 60 * 60 * 24),
+    );
   }
 }
