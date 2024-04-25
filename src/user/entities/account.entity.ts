@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -74,7 +75,7 @@ export class Account extends BaseEntity {
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     const exist = await Account.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     if (exist) throw new ConflictException(conflictMsg);

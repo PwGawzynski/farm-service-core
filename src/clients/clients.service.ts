@@ -24,6 +24,7 @@ import { CreateAddressDto } from '../address/dto/create-address.dto';
 import { PersonalData } from '../personal-data/entities/personalData.entity';
 import { ClientsCompany } from '../clients_company/entities/clients_company.entity';
 import { Address } from '../address/entities/address.entity';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class ClientsService {
@@ -46,7 +47,7 @@ export class ClientsService {
       user: new UserResponseDto({
         role: user.role,
         address: await user.address,
-        personal_data: new PersonalDataResponseDto({
+        personalData: new PersonalDataResponseDto({
           ...personalData,
         }),
       }),
@@ -69,7 +70,7 @@ export class ClientsService {
     const registeredUser = await User.findOne({
       where: {
         account: {
-          email: user.email,
+          email: Equal(user.email),
         },
       },
     });
@@ -92,7 +93,7 @@ export class ClientsService {
       user: new UserResponseDto({
         role: registeredUser.role,
         address: await registeredUser.address,
-        personal_data: new PersonalDataResponseDto(
+        personalData: new PersonalDataResponseDto(
           await registeredUser.personalData,
         ),
       }),
@@ -152,11 +153,11 @@ export class ClientsService {
   }
 
   async _updatePersonalData(
-    personal_data: CreatePersonalDataDto,
+    personalData: CreatePersonalDataDto,
     client: Client,
   ) {
     return this.personalDataService.update({
-      ...personal_data,
+      ...personalData,
       id: (await client.user.personalData).id,
     });
   }
@@ -168,9 +169,9 @@ export class ClientsService {
   }
 
   async update(updateData: UpdateClientDto) {
-    const { personal_data, client, email, address } = updateData;
-    if (personal_data) {
-      const res = await this._updatePersonalData(personal_data, client);
+    const { personalData, client, email, address } = updateData;
+    if (personalData) {
+      const res = await this._updatePersonalData(personalData, client);
       client.user.personalData = Promise.resolve(new PersonalData(res.payload));
     }
     if (address) {

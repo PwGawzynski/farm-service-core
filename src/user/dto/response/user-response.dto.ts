@@ -12,7 +12,7 @@ export class UserResponseWhiteListDto {
   @Expose()
   role: UserRole;
   @Expose()
-  personal_data: PersonalDataResponseDto;
+  personalData: PersonalDataResponseDto;
   @Expose()
   address: AddressResponseDto;
   @Expose()

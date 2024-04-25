@@ -12,7 +12,7 @@ import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class MachineService {
-  private async _prepareResponse(machine: Machine) {
+  async prepareResponseDto(machine: Machine) {
     return new MachineResponseDto({
       id: machine.id,
       name: machine.name,
@@ -27,7 +27,7 @@ export class MachineService {
     machine.save();
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this._prepareResponse(machine),
+      payload: await this.prepareResponseDto(machine),
     } as ResponseObject<MachineResponseDto>;
   }
 
@@ -40,7 +40,7 @@ export class MachineService {
       } as ResponseObject<MachineResponseDto[]>;
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await Promise.all(machines.map(this._prepareResponse)),
+      payload: await Promise.all(machines.map(this.prepareResponseDto)),
     } as ResponseObject<MachineResponseDto[]>;
   }
 
@@ -54,7 +54,7 @@ export class MachineService {
     machine.save();
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this._prepareResponse(machine),
+      payload: await this.prepareResponseDto(machine),
     } as ResponseObject<MachineResponseDto>;
   }
 
@@ -67,7 +67,7 @@ export class MachineService {
     machine.save();
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this._prepareResponse(machine),
+      payload: await this.prepareResponseDto(machine),
     } as ResponseObject<MachineResponseDto>;
   }
 }

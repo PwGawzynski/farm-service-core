@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { User } from '../user/entities/user.entity';
 import { throwError } from '../../decorators/user.decorator';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -16,7 +17,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   private async _AssignUser(userId: string, context: ExecutionContext) {
     const user = await User.findOne({
       where: {
-        id: userId,
+        id: Equal(userId),
       },
     });
     const isAccountActivated = !!(await user?.account)?.isActivated;

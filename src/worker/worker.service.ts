@@ -15,14 +15,25 @@ import { PersonalDataResponseDto } from '../personal-data/dto/response/personalD
 import { concatMap, filter, interval, take, takeUntil, timeout } from 'rxjs';
 import { User } from '../user/entities/user.entity';
 import { UpdateWorkerStatusOrPositionDto } from './dto/update-worker.dto';
+import { Equal } from 'typeorm';
+import { v4 as uuid } from 'uuid';
+import { Position, Status } from '../../FarmServiceApiTypes/Worker/Enums';
 
 @Injectable()
 export class WorkerService {
-  async createWorkerResponseDto(worker: Worker) {
+  async prepareCreateWorkerResponseDto(worker: Worker) {
     const user = await worker.user;
     const account = await user.account;
     const address = await user.address;
     const personalData = await user.personalData;
+    console.log({
+      id: worker.id,
+      status: worker.status,
+      position: worker.position,
+      email: account.email,
+      address: new AddressResponseDto(address),
+      personalData: new PersonalDataResponseDto(personalData),
+    });
     return new WorkerResponseDto({
       id: worker.id,
       status: worker.status,
@@ -38,23 +49,30 @@ export class WorkerService {
     const worker = new Worker({
       user: Promise.resolve(user),
       company: Promise.resolve(company),
+      id: uuid(),
+      status: Status.Active,
+      position: Position.Operator,
     });
-    await worker._shouldNotExist('user');
+    const exist = await Worker.findOne({
+      where: { user: { id: Equal(user.id) } },
+    });
+    if (exist) throw new Error('Worker already exist');
     worker.save();
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this.createWorkerResponseDto(worker),
+      payload: await this.prepareCreateWorkerResponseDto(worker),
     } as ResponseObject<WorkerResponseDto>;
   }
 
   async getInfo(user: User) {
     const worker = await Worker.findOne({
-      where: { user: { id: user.id } },
+      where: { user: { id: Equal(user.id) } },
     });
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: {
-        workerData: worker && (await this.createWorkerResponseDto(worker)),
+        workerData:
+          worker && (await this.prepareCreateWorkerResponseDto(worker)),
         userId: user.id,
       },
     } as ResponseObject<WorkerIdResponseDto>;
@@ -68,14 +86,13 @@ export class WorkerService {
     );
     return interval(2000).pipe(
       concatMap(async () => {
-        console.log('TEstSee');
         const worker = await Worker.findOne({
-          where: { user: { id: user.id } },
+          where: { user: { id: Equal(user.id) } },
         });
         if (worker) {
           return JSON.stringify({
             code: ResponseCode.ProcessedCorrect,
-            payload: await this.createWorkerResponseDto(worker),
+            payload: await this.prepareCreateWorkerResponseDto(worker),
           } as ResponseObject<WorkerResponseDto>);
         }
         return JSON.stringify({
@@ -100,7 +117,7 @@ export class WorkerService {
       } as ResponseObject<WorkerResponseDto[]>;
     const res = await Promise.all(
       workers?.map(
-        async (worker) => await this.createWorkerResponseDto(worker),
+        async (worker) => await this.prepareCreateWorkerResponseDto(worker),
       ),
     );
     return {
@@ -117,7 +134,7 @@ export class WorkerService {
     worker.save();
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this.createWorkerResponseDto(worker),
+      payload: await this.prepareCreateWorkerResponseDto(worker),
     } as ResponseObject<WorkerResponseDto>;
   }
 }

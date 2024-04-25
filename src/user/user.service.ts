@@ -32,6 +32,7 @@ import { AccountResponseDto } from './dto/response/account.response';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -49,7 +50,7 @@ export class UserService {
     return User.findOne({
       where: {
         account: {
-          email: login,
+          email: Equal(login),
         },
       },
     });
@@ -63,7 +64,7 @@ export class UserService {
   async findOneById(id: string) {
     return User.findOne({
       where: {
-        id,
+        id: Equal(id),
       },
     });
   }
@@ -114,7 +115,7 @@ export class UserService {
       password: await this.hashPwd(data.password),
     });
     const newPersonalData = new PersonalData({
-      ...data.personal_data,
+      ...data.personalData,
     });
     const newAddress = new Address({
       ...data.address,
@@ -228,7 +229,7 @@ export class UserService {
   async activate(code: string) {
     const account = await Account.findOne({
       where: {
-        activationCode: code,
+        activationCode: Equal(code),
       },
     });
     if (!account) throw new BadRequestException('BAD_CODE');
@@ -240,14 +241,13 @@ export class UserService {
   }
 
   async me(user: User) {
-    console.log(await user.company, 'IMPORT');
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: new UserResponseDto({
         ...user,
         account: new AccountResponseDto(await user.account),
         address: new AddressResponseDto(await user.address),
-        personal_data: new PersonalDataResponseDto(await user.personalData),
+        personalData: new PersonalDataResponseDto(await user.personalData),
         company: (await user.company)
           ? new CompanyResponseDto({
               ...(await user.company),
@@ -265,7 +265,7 @@ export class UserService {
   async resetPassword(email: string) {
     if (!email) throw new BadRequestException('BAD_EMAIL');
     const user = await User.findOne({
-      where: { account: { email } },
+      where: { account: { email: Equal(email) } },
     });
     console.log(user, email);
     if (user) {

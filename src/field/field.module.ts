@@ -14,5 +14,6 @@ import { HttpModule } from '@nestjs/axios';
   ],
   controllers: [FieldController],
   providers: [FieldService],
+  exports: [FieldService],
 })
 export class FieldModule {}

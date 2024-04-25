@@ -13,6 +13,7 @@ import { AddressResponseDto } from '../address/dto/response/address.response.dto
 import { ClientsResponseDto } from '../clients/dto/response/client.response.dto';
 import { UserResponseDto } from '../user/dto/response/user-response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class CompanyService {
@@ -28,7 +29,7 @@ export class CompanyService {
     const exist = await Company.findOne({
       where: {
         owner: {
-          id: owner.id,
+          id: Equal(owner.id),
         },
       },
     });
@@ -74,7 +75,7 @@ export class CompanyService {
         user: new UserResponseDto({
           address: new AddressResponseDto(address),
           role: user.role,
-          personal_data: new PersonalDataResponseDto(personalData),
+          personalData: new PersonalDataResponseDto(personalData),
         }),
       });
     });

@@ -2,10 +2,12 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   Index,
   JoinColumn,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -14,6 +16,7 @@ import { ConflictException } from '@nestjs/common';
 import FieldConstants from '../../../FarmServiceApiTypes/Field/Constants';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../order/entities/order.entity';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity()
 export class Field extends BaseEntity {
@@ -78,13 +81,16 @@ export class Field extends BaseEntity {
   })
   owner: Promise<User>;
 
+  @OneToMany(() => Task, (task) => task.field)
+  tasks: Promise<Task[] | null>;
+
   @ManyToMany(() => Order, (order) => order.fields)
   orders: Promise<Order[] | null>;
 
   async _shouldNotExist() {
     const exist = await Field.findOne({
       where: {
-        polishSystemId: this.polishSystemId,
+        polishSystemId: Equal(this.polishSystemId),
       },
     });
     if (exist)

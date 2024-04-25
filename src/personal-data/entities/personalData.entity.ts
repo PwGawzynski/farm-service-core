@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -52,7 +53,7 @@ export class PersonalData extends BaseEntity {
   ) {
     const exist = await PersonalData.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     console.log(exist, this[key]);

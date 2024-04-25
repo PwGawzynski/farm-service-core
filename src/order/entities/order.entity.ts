@@ -5,6 +5,7 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import OrderConstants from '../../../FarmServiceApiTypes/Order/Constants';
@@ -12,6 +13,7 @@ import { Company } from '../../company/entities/company.entity';
 import { Field } from '../../field/entities/field.entity';
 import { OrderStatus } from '../../../FarmServiceApiTypes/Order/Enums';
 import { Client } from '../../clients/entities/client.entity';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity()
 export class Order extends BaseEntity {
@@ -106,4 +108,7 @@ export class Order extends BaseEntity {
   @ManyToMany(() => Field, (field) => field.orders, { nullable: true })
   @JoinTable({ name: 'orders_fields' })
   fields?: Promise<Field[] | null>;
+
+  @OneToMany(() => Task, (t) => t.order, { nullable: true })
+  tasks?: Promise<Task[] | null>;
 }

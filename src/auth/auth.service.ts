@@ -23,14 +23,15 @@ import {
   ResponseCode,
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
+import { Equal } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   private static secret: string;
   private static refreshSecret: string;
-  private static accessTokenExpirationTime: string;
-  private static refreshTokenExpirationTime: string;
-  private static maxRegisteredDevicesCount: string;
+  private static accessTokenExpirationTime: number;
+  private static refreshTokenExpirationTime: number;
+  private static maxRegisteredDevicesCount: number;
   constructor(
     private jwtService: JwtService,
     @Inject(forwardRef(() => UserService))
@@ -50,13 +51,21 @@ export class AuthService {
     AuthService.refreshSecret = refresh;
     if (!accessTokenExpirationTime)
       throw new Error('No access token expiration time');
-    AuthService.accessTokenExpirationTime = accessTokenExpirationTime;
+    if (isNaN(parseInt(accessTokenExpirationTime)))
+      throw new Error('Access token expiration time must be a number');
+    AuthService.accessTokenExpirationTime = parseInt(accessTokenExpirationTime);
     if (!refreshTokenExpirationTime)
       throw new Error('No refresh token expiration time');
-    AuthService.refreshTokenExpirationTime = refreshTokenExpirationTime;
+    if (isNaN(parseInt(refreshTokenExpirationTime)))
+      throw new Error('Refresh token expiration time must be a number');
+    AuthService.refreshTokenExpirationTime = parseInt(
+      refreshTokenExpirationTime,
+    );
     if (!maxRegisteredDevicesCount)
       throw new Error('No max registered devices count');
-    AuthService.maxRegisteredDevicesCount = maxRegisteredDevicesCount;
+    if (isNaN(parseInt(maxRegisteredDevicesCount)))
+      throw new Error('Max registered devices count must be a number');
+    AuthService.maxRegisteredDevicesCount = parseInt(maxRegisteredDevicesCount);
   }
 
   /**
@@ -122,14 +131,12 @@ export class AuthService {
     const toRemove = tokens.filter((token) => {
       return (
         new Date().getTime() - token.createdAt.getTime() >
-        parseInt(AuthService.refreshTokenExpirationTime)
+        AuthService.refreshTokenExpirationTime * 1000
       );
     });
+    console.log(toRemove, 'TR');
     toRemove.forEach((token) => token.remove());
-    if (
-      tokens.length - toRemove.length >
-      parseInt(AuthService.maxRegisteredDevicesCount)
-    )
+    if (tokens.length - toRemove.length > AuthService.maxRegisteredDevicesCount)
       throw new HttpException(
         'The maximum numbers of active devices has been Violated',
         HttpStatus.UNAUTHORIZED,
@@ -188,7 +195,7 @@ export class AuthService {
       }),
       this.jwtService.signAsync(refreshPayload, {
         secret: AuthService.refreshSecret,
-        expiresIn: parseInt(AuthService.refreshTokenExpirationTime),
+        expiresIn: AuthService.refreshTokenExpirationTime,
       }),
       refreshPayload.deviceId,
     ]);
@@ -260,7 +267,7 @@ export class AuthService {
 
     const oldTokensEntity = await RefreshToken.find({
       where: {
-        deviceId: req.user['deviceId'],
+        deviceId: Equal(req.user['deviceId']),
       },
     });
     if (!oldTokensEntity.length)

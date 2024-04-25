@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  Equal,
   Index,
   JoinColumn,
   OneToOne,
@@ -54,7 +55,7 @@ export class ClientsCompany extends BaseEntity {
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     const exist = await ClientsCompany.findOne({
       where: {
-        [key]: this[key],
+        [key]: Equal(this[key]),
       },
     });
     if (exist) throw new ConflictException(conflictMsg);

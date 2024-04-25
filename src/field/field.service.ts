@@ -20,6 +20,7 @@ import { User } from '../user/entities/user.entity';
 import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 import { Client } from '../clients/entities/client.entity';
 import { UpdateFieldDto } from './dto/update-field.dto';
+import { Equal } from 'typeorm';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 /*const proj4 = require('proj4')*/ type DataObject = {
   type: 'text' | 'cdata' | string;
@@ -98,10 +99,7 @@ export class FieldService {
     };
   }
 
-  private async _prepareResponsePayload(
-    filed: Field,
-    filedAddress: FieldAddress,
-  ) {
+  async prepareResponseDto(filed: Field, filedAddress: FieldAddress) {
     // filed.address = undefined;
     return new FieldResponseDto({
       ...filed,
@@ -113,7 +111,7 @@ export class FieldService {
     // filed.address = undefined;
     return {
       code: ResponseCode.ProcessedWithoutConfirmationWaiting,
-      payload: await this._prepareResponsePayload(filed, filedAddress),
+      payload: await this.prepareResponseDto(filed, filedAddress),
     } as ResponseObject<FieldResponseDto>;
   }
 
@@ -200,7 +198,7 @@ export class FieldService {
 
   async getOnePlId(PLid: string) {
     const field = await Field.findOne({
-      where: { polishSystemId: PLid },
+      where: { polishSystemId: Equal(PLid) },
     });
     if (!field) throw new NotFoundException('Cannot find field with given id');
     return this._prepareResponse(field, await field.address);
@@ -208,7 +206,7 @@ export class FieldService {
 
   async getOne(id: string) {
     const field = await Field.findOne({
-      where: { id },
+      where: { id: Equal(id) },
     });
     if (!field) throw new NotFoundException('Cannot find field with given id');
     return this._prepareResponse(field, await field.address);
@@ -245,7 +243,7 @@ export class FieldService {
 
   async delete(id: string) {
     const field = await Field.findOne({
-      where: { id },
+      where: { id: Equal(id) },
     });
     if (!field) throw new NotFoundException('Cannot find field with given id');
     field.remove();
@@ -258,7 +256,7 @@ export class FieldService {
     if (id === undefined)
       throw new NotFoundException('Cannot find client with given id');
     const client = await Client.findOne({
-      where: { id },
+      where: { id: Equal(id) },
     });
     if (!client)
       throw new NotFoundException('Cannot find client with given id');
@@ -267,7 +265,7 @@ export class FieldService {
       code: ResponseCode.ProcessedCorrect,
       payload: await Promise.all(
         fields.map(async (field) =>
-          this._prepareResponsePayload(field, await field.address),
+          this.prepareResponseDto(field, await field.address),
         ),
       ),
     } as ResponseObject<FieldResponseDto[]>;

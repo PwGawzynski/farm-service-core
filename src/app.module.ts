@@ -23,6 +23,8 @@ import { MachineModule } from './machine/machine.module';
 import { FieldModule } from './field/field.module';
 import { FieldAddressModule } from './field-address/field-address.module';
 import { OrderModule } from './order/order.module';
+import { TaskModule } from './task/task.module';
+import { TaskSessionService } from './task-session/task-session.service';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { OrderModule } from './order/order.module';
     FieldModule,
     FieldAddressModule,
     OrderModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [
@@ -78,6 +81,7 @@ import { OrderModule } from './order/order.module';
       provide: APP_GUARD,
       useClass: RoleGuard,
     },
+    TaskSessionService,
   ],
 })
 export class AppModule {}
