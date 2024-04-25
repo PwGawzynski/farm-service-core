@@ -32,6 +32,15 @@ export class TaskSessionService {
     return session;
   }
 
+  async findOpen(t: Task) {
+    return TaskSession.find({
+      where: {
+        task: { id: Equal(t.id) },
+        closedAt: IsNull(),
+      },
+    });
+  }
+
   async findOrThrow(task: Task): Promise<TaskSession> {
     const t = await TaskSession.findOne({
       where: {

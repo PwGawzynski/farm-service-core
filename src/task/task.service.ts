@@ -18,6 +18,7 @@ import { Equal } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { concatMap, interval, startWith, timeout } from 'rxjs';
 import { Worker } from '../worker/entities/worker.entity';
+import { TaskSession } from '../task-session/entities/task-session.entity';
 
 @Injectable()
 export class TaskService {
@@ -191,6 +192,22 @@ export class TaskService {
     );
   }
 
+  private async updateSessions(
+    task: Task,
+    updatedSession: TaskSession | undefined,
+  ) {
+    const oldSessions = await task.sessions;
+    if (!oldSessions?.length && updatedSession) {
+      task.sessions = Promise.resolve([updatedSession]);
+    } else if (updatedSession && oldSessions?.length) {
+      task.sessions = Promise.resolve(
+        oldSessions
+          .filter((s) => s.id !== updatedSession.id)
+          .concat(updatedSession),
+      );
+    }
+  }
+
   async findAndValidate(taskId: string, worker: Worker) {
     const task = await Task.findOne({ where: { id: Equal(taskId) } });
     const exist = (await worker.tasks)?.find((t) => t.id === taskId);
@@ -219,10 +236,11 @@ export class TaskService {
       throw new ConflictException(
         "Cannot close task with hasn't been opened, or is already done",
       );
-    await this.TaskSessionService.close(task);
+    const updatedSession = await this.TaskSessionService.close(task);
     task.closedAt = new Date();
     task.isDone = true;
     task.save();
+    await this.updateSessions(task, updatedSession);
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: await this.produceResponseTaskObject(task),
@@ -246,16 +264,7 @@ export class TaskService {
       const updatedSession = await this.TaskSessionService.close(task);
       task.lastPausedAt = new Date();
       task.save();
-      const oldSessions = await task.sessions;
-      if (!oldSessions?.length && updatedSession) {
-        task.sessions = Promise.resolve([updatedSession]);
-      } else if (updatedSession && oldSessions?.length) {
-        task.sessions = Promise.resolve(
-          oldSessions
-            .filter((s) => s.id !== updatedSession.id)
-            .concat(updatedSession),
-        );
-      }
+      await this.updateSessions(task, updatedSession);
       return {
         code: ResponseCode.ProcessedCorrect,
         payload: await this.produceResponseTaskObject(task),
