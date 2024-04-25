@@ -48,7 +48,6 @@ export class TaskSessionService {
       session.save();
       return session;
     }
-    throw new Error('Task session not found');
   }
 
   async closeSession(session: TaskSession) {

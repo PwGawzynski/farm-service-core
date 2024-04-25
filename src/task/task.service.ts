@@ -209,8 +209,9 @@ export class TaskService {
         'Cannot start task is already opened, or is already done',
       );
     task.openedAt = new Date();
-    await this.TaskSessionService.open(task);
+    const openedSession = await this.TaskSessionService.open(task);
     task.save();
+    await this.updateSessions(task, openedSession);
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: await this.produceResponseTaskObject(task),
