@@ -91,7 +91,6 @@ export class TaskService {
     createTaskDto: CreateTaskDto,
     company: Company,
   ) {
-    console.log('test');
     const { worker, order, field } = createTaskDto;
     const alreadyExist = await Task.findOne({
       where: {
