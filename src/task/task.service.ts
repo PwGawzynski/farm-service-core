@@ -243,9 +243,19 @@ export class TaskService {
         payload: await this.produceResponseTaskObject(task),
       } as ResponseObject<TaskResponseDto>;
     } catch {
-      await this.TaskSessionService.close(task);
+      const updatedSession = await this.TaskSessionService.close(task);
       task.lastPausedAt = new Date();
       task.save();
+      const oldSessions = await task.sessions;
+      if (!oldSessions?.length && updatedSession) {
+        task.sessions = Promise.resolve([updatedSession]);
+      } else if (updatedSession && oldSessions?.length) {
+        task.sessions = Promise.resolve(
+          oldSessions
+            .filter((s) => s.id !== updatedSession.id)
+            .concat(updatedSession),
+        );
+      }
       return {
         code: ResponseCode.ProcessedCorrect,
         payload: await this.produceResponseTaskObject(task),
