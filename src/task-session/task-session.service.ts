@@ -3,6 +3,7 @@ import { TaskSession } from './entities/task-session.entity';
 import { Equal, IsNull } from 'typeorm';
 import { TaskSessionResponseDto } from './dto/response/task-session-response.dto';
 import { Task } from '../task/entities/task.entity';
+import { TaskSessionEntityDto } from './dto/TaskSessionEntity.dto';
 
 @Injectable()
 export class TaskSessionService {
@@ -24,9 +25,16 @@ export class TaskSessionService {
     return new TaskSessionResponseDto(task);
   }
 
-  async open(task: Task): Promise<TaskSession> {
+  async open(
+    task: Task,
+    sessionData?: TaskSessionEntityDto,
+  ): Promise<TaskSession> {
     await this.preOpenValidate((await task.worker).id);
     const session = new TaskSession();
+    if (sessionData) {
+      session.onOpenWorkerLatitude = sessionData.onOpenWorkerLatitude;
+      session.onopenWorkerLongitude = sessionData.onopenWorkerLongitude;
+    }
     session.task = task;
     session.save();
     return session;
