@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Task } from '../../task/entities/task.entity';
+import FieldAddressConstants from '../../../FarmServiceApiTypes/FiledAddress/Constants';
 
 @Entity()
 export class TaskSession extends BaseEntity {
@@ -26,6 +27,20 @@ export class TaskSession extends BaseEntity {
     name: 'closed_at',
   })
   closedAt?: Date | null;
+
+  @Column({
+    type: 'varchar',
+    length: FieldAddressConstants.LATITUDE_MAX_LEN,
+    nullable: false,
+  })
+  onOpenWorkerLatitude: string;
+
+  @Column({
+    type: 'varchar',
+    length: FieldAddressConstants.LONGITUDE_MAX_LEN,
+    nullable: false,
+  })
+  onopenWorkerLongitude: string;
 
   @ManyToOne(() => Task, (task) => task.sessions, {
     nullable: true,

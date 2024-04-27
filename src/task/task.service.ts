@@ -19,6 +19,7 @@ import { v4 as uuid } from 'uuid';
 import { concatMap, interval, startWith, timeout } from 'rxjs';
 import { Worker } from '../worker/entities/worker.entity';
 import { TaskSession } from '../task-session/entities/task-session.entity';
+import { TaskSessionEntityDto } from '../task-session/dto/TaskSessionEntity.dto';
 
 @Injectable()
 export class TaskService {
@@ -201,14 +202,22 @@ export class TaskService {
     } as ResponseObject;
   }
 
-  async startTask(taskId: string, worker: Worker) {
+  async startTask(
+    taskId: string,
+    worker: Worker,
+    sessionData: TaskSessionEntityDto,
+  ) {
     const task = await this.findAndValidate(taskId, worker);
     if (task.openedAt || task.isDone || task.closedAt)
       throw new ConflictException(
         'Cannot start task is already opened, or is already done',
       );
+    if (!sessionData)
+      throw new ConflictException(
+        'Worker location data is required to open task',
+      );
     task.openedAt = new Date();
-    const openedSession = await this.TaskSessionService.open(task);
+    const openedSession = await this.TaskSessionService.open(task, sessionData);
     task.save();
     await this.updateSessions(task, openedSession);
     return {
