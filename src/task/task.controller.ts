@@ -14,6 +14,7 @@ import { CrateTaskCollection } from './dto/create-task.dto';
 import { GetOwnedCompany, GetWorker } from '../../decorators/user.decorator';
 import { Company } from '../company/entities/company.entity';
 import { Worker } from '../worker/entities/worker.entity';
+import { TaskSessionEntityDto } from '../task-session/dto/TaskSessionEntity.dto';
 
 @Controller('task')
 export class TaskController {
@@ -42,8 +43,9 @@ export class TaskController {
   async startTask(
     @GetWorker() worker: Worker,
     @Query('task-id') taskId: string,
+    @Body() sessionData: TaskSessionEntityDto,
   ) {
-    return this.taskService.startTask(taskId, worker);
+    return this.taskService.startTask(taskId, worker, sessionData);
   }
 
   @Put('close')
