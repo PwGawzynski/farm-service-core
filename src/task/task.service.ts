@@ -148,6 +148,13 @@ export class TaskService {
     return task;
   }
 
+  private validateSessionData(sessionData: TaskSessionEntityDto) {
+    if (!sessionData.onOpenWorkerLatitude || !sessionData.onopenWorkerLongitude)
+      throw new ConflictException(
+        'Worker location data is required perform this action',
+      );
+  }
+
   /**
    * -----------------------------CRUD METHODS--------------------------------
    */
@@ -212,10 +219,7 @@ export class TaskService {
       throw new ConflictException(
         'Cannot start task is already opened, or is already done',
       );
-    if (!sessionData)
-      throw new ConflictException(
-        'Worker location data is required to open task',
-      );
+    this.validateSessionData(sessionData);
     task.openedAt = new Date();
     const openedSession = await this.TaskSessionService.open(task, sessionData);
     task.save();
@@ -226,13 +230,21 @@ export class TaskService {
     } as ResponseObject<TaskResponseDto>;
   }
 
-  async closeTask(taskId: string, worker: Worker) {
+  async closeTask(
+    taskId: string,
+    worker: Worker,
+    sessionData: TaskSessionEntityDto,
+  ) {
     const task = await this.findAndValidate(taskId, worker);
     if (!task.openedAt || task.closedAt || task.isDone)
       throw new ConflictException(
         "Cannot close task with hasn't been opened, or is already done",
       );
-    const updatedSession = await this.TaskSessionService.close(task);
+    this.validateSessionData(sessionData);
+    const updatedSession = await this.TaskSessionService.close(
+      task,
+      sessionData,
+    );
     task.closedAt = new Date();
     task.isDone = true;
     task.save();
@@ -243,7 +255,11 @@ export class TaskService {
     } as ResponseObject<TaskResponseDto>;
   }
 
-  async pause(taskId: string, worker: Worker) {
+  async pause(
+    taskId: string,
+    worker: Worker,
+    sessionData: TaskSessionEntityDto,
+  ) {
     const task = await this.findAndValidate(taskId, worker);
     if (!task.openedAt || task.isDone || task.closedAt)
       throw new ConflictException(
@@ -260,7 +276,8 @@ export class TaskService {
       task.save();
       await this.updateSessions(task, closed);
     } else {
-      const opened = await this.TaskSessionService.open(task);
+      this.validateSessionData(sessionData);
+      const opened = await this.TaskSessionService.open(task, sessionData);
       await this.updateSessions(task, opened);
     }
     return {

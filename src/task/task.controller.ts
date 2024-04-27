@@ -53,14 +53,19 @@ export class TaskController {
   async closeTask(
     @GetWorker() worker: Worker,
     @Query('task-id') taskId: string,
+    @Body() sessionData: TaskSessionEntityDto,
   ) {
-    return this.taskService.closeTask(taskId, worker);
+    return this.taskService.closeTask(taskId, worker, sessionData);
   }
 
   @Put('pause')
   @WorkerRole()
-  async pause(@GetWorker() worker: Worker, @Query('task-id') taskId: string) {
-    return this.taskService.pause(taskId, worker);
+  async pause(
+    @GetWorker() worker: Worker,
+    @Query('task-id') taskId: string,
+    @Body() sessionData: TaskSessionEntityDto,
+  ) {
+    return this.taskService.pause(taskId, worker, sessionData);
   }
 
   @Delete()

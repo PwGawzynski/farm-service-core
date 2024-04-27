@@ -49,10 +49,12 @@ export class TaskSessionService {
     });
   }
 
-  async close(task: Task) {
+  async close(task: Task, sessionData: TaskSessionEntityDto) {
     const session = await this.findOpen(task);
     if (session) {
       session.closedAt = new Date();
+      session.onOpenWorkerLatitude = sessionData.onOpenWorkerLatitude;
+      session.onopenWorkerLongitude = sessionData.onopenWorkerLongitude;
       session.save();
       return session;
     }
