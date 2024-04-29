@@ -40,11 +40,26 @@ export class TaskSession extends BaseEntity {
     length: FieldAddressConstants.LONGITUDE_MAX_LEN,
     nullable: false,
   })
-  onopenWorkerLongitude: string;
+  onOpenWorkerLongitude: string;
+
+  @Column({
+    type: 'varchar',
+    length: FieldAddressConstants.LATITUDE_MAX_LEN,
+    nullable: true,
+  })
+  onCloseWorkerLatitude: string;
+
+  @Column({
+    type: 'varchar',
+    length: FieldAddressConstants.LONGITUDE_MAX_LEN,
+    nullable: true,
+  })
+  onCloseWorkerLongitude: string;
 
   @ManyToOne(() => Task, (task) => task.sessions, {
     nullable: true,
     eager: true,
+    onDelete: 'CASCADE',
   })
   task: Task;
 }
