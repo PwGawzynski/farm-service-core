@@ -149,9 +149,16 @@ export class TaskService {
   }
 
   private validateSessionData(sessionData: TaskSessionEntityDto) {
-    if (!sessionData.onOpenWorkerLatitude || !sessionData.onopenWorkerLongitude)
+    if (!sessionData.workerLatitude || !sessionData.workerLongitude)
       throw new ConflictException(
         'Worker location data is required perform this action',
+      );
+  }
+
+  private taskOpenedUnfinished(task: Task) {
+    if (!task.openedAt || task.closedAt || task.isDone)
+      throw new ConflictException(
+        "Cannot close task with hasn't been opened, or is already done",
       );
   }
 
@@ -236,15 +243,27 @@ export class TaskService {
     sessionData: TaskSessionEntityDto,
   ) {
     const task = await this.findAndValidate(taskId, worker);
-    if (!task.openedAt || task.closedAt || task.isDone)
-      throw new ConflictException(
-        "Cannot close task with hasn't been opened, or is already done",
-      );
+    this.taskOpenedUnfinished(task);
     this.validateSessionData(sessionData);
     const updatedSession = await this.TaskSessionService.close(
       task,
       sessionData,
     );
+    task.closedAt = new Date();
+    task.isDone = true;
+    task.save();
+    await this.updateSessions(task, updatedSession);
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: await this.produceResponseTaskObject(task),
+    } as ResponseObject<TaskResponseDto>;
+  }
+
+  async closeByOwner(taskId: string, company: Company) {
+    const task = (await company.tasks)?.find((t) => t.id === taskId);
+    if (!task) throw new ConflictException('Task not found');
+    this.taskOpenedUnfinished(task);
+    const updatedSession = await this.TaskSessionService.closeByOwner(task);
     task.closedAt = new Date();
     task.isDone = true;
     task.save();
@@ -261,17 +280,9 @@ export class TaskService {
     sessionData: TaskSessionEntityDto,
   ) {
     const task = await this.findAndValidate(taskId, worker);
-    if (!task.openedAt || task.isDone || task.closedAt)
-      throw new ConflictException(
-        "Cannot pause task with hasn't been opened, or is already done",
-      );
-    const hasOpenedSession = (await task.sessions)?.find(
-      (s) => s.openedAt && !s.closedAt,
-    );
-    if (hasOpenedSession) {
-      const closed = await this.TaskSessionService.closeSession(
-        hasOpenedSession,
-      );
+    this.taskOpenedUnfinished(task);
+    const closed = await this.TaskSessionService.close(task, sessionData);
+    if (closed) {
       task.lastPausedAt = new Date();
       task.save();
       await this.updateSessions(task, closed);
