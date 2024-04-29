@@ -10,6 +10,14 @@ export class CreateTaskSessionResponseWhiteList {
 
   @Expose()
   closedAt?: Date | null;
+  @Expose()
+  onOpenWorkerLatitude?: string;
+  @Expose()
+  onOpenWorkerLongitude?: string;
+  @Expose()
+  onCloseWorkerLatitude?: string;
+  @Expose()
+  onCloseWorkerLongitude?: string;
 }
 
 @Exclude()
