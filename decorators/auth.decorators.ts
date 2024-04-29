@@ -15,6 +15,9 @@ export const AllRoles = () =>
 export const OwnerAndClient = () =>
   SetMetadata('roles', [UserRole.Owner, UserRole.Client]);
 
+export const OwnerAndWorker = () =>
+  SetMetadata('roles', [UserRole.Owner, UserRole.Worker]);
+
 export const Worker = () => SetMetadata('roles', [UserRole.Worker]);
 
 export const Public = () => SetMetadata(JwtAuthGuard.IS_PUBLIC_PATH, true);
