@@ -58,6 +58,15 @@ export class TaskController {
     return this.taskService.closeTask(taskId, worker, sessionData);
   }
 
+  @Put('close-by-owner')
+  @Owner()
+  async closeTaskOwner(
+    @GetOwnedCompany() company: Company,
+    @Query('task-id') taskId: string,
+  ) {
+    return this.taskService.closeByOwner(taskId, company);
+  }
+
   @Put('pause')
   @WorkerRole()
   async pause(
