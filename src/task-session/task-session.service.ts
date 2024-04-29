@@ -32,8 +32,8 @@ export class TaskSessionService {
     await this.preOpenValidate((await task.worker).id);
     const session = new TaskSession();
     if (sessionData) {
-      session.onOpenWorkerLatitude = sessionData.onOpenWorkerLatitude;
-      session.onopenWorkerLongitude = sessionData.onopenWorkerLongitude;
+      session.onOpenWorkerLatitude = sessionData.workerLatitude;
+      session.onOpenWorkerLongitude = sessionData.workerLongitude;
     }
     session.task = task;
     session.save();
@@ -53,8 +53,17 @@ export class TaskSessionService {
     const session = await this.findOpen(task);
     if (session) {
       session.closedAt = new Date();
-      session.onOpenWorkerLatitude = sessionData.onOpenWorkerLatitude;
-      session.onopenWorkerLongitude = sessionData.onopenWorkerLongitude;
+      session.onCloseWorkerLatitude = sessionData.workerLatitude;
+      session.onCloseWorkerLongitude = sessionData.workerLongitude;
+      session.save();
+      return session;
+    }
+  }
+
+  async closeByOwner(task: Task) {
+    const session = await this.findOpen(task);
+    if (session) {
+      session.closedAt = new Date();
       session.save();
       return session;
     }
