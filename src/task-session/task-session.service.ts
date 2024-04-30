@@ -21,8 +21,8 @@ export class TaskSessionService {
     }
   }
 
-  prepareResponseDto(task: TaskSession) {
-    return new TaskSessionResponseDto(task);
+  prepareResponseDto(session: TaskSession) {
+    return new TaskSessionResponseDto({ ...session });
   }
 
   async open(
@@ -31,6 +31,11 @@ export class TaskSessionService {
   ): Promise<TaskSession> {
     await this.preOpenValidate((await task.worker).id);
     const session = new TaskSession();
+    // it have to be done because task field is null if not awaited
+    await task.field;
+    await task.worker;
+    session.worker = task.worker;
+    session.field = task.field;
     if (sessionData) {
       session.onOpenWorkerLatitude = sessionData.workerLatitude;
       session.onOpenWorkerLongitude = sessionData.workerLongitude;
@@ -67,14 +72,5 @@ export class TaskSessionService {
       session.save();
       return session;
     }
-  }
-
-  async closeSession(session: TaskSession) {
-    if (session) {
-      session.closedAt = new Date();
-      session.save();
-      return session;
-    }
-    throw new Error('Task session not found');
   }
 }

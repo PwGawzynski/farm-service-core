@@ -5,7 +5,12 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({ credentials: true, origin: true });
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector), {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    }),
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -227,8 +227,8 @@ export class TaskService {
         'Cannot start task is already opened, or is already done',
       );
     this.validateSessionData(sessionData);
-    task.openedAt = new Date();
     const openedSession = await this.TaskSessionService.open(task, sessionData);
+    task.openedAt = new Date();
     task.save();
     await this.updateSessions(task, openedSession);
     return {
