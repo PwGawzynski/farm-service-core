@@ -1,12 +1,4 @@
-import {
-  IsDate,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Length,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsDate, IsOptional, IsString, Length } from 'class-validator';
 import OrderConstants from '../../../FarmServiceApiTypes/Order/Constants';
 import { FindOrReject } from '../../../ClassValidatorCustomDecorators/FindOrReject.decorator';
 import { Order } from '../entities/order.entity';
@@ -31,10 +23,4 @@ export class UpdateOrderDto {
   @IsDate()
   @IsOptional()
   performanceDate: Date;
-
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(OrderConstants.MIN_PRICE_PER_UNIT)
-  @Max(OrderConstants.MAX_PRICE_PER_UNIT)
-  pricePerUnit: number;
 }
