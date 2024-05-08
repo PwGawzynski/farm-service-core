@@ -5,10 +5,12 @@ import { FieldModule } from '../field/field.module';
 import { WorkerModule } from '../worker/worker.module';
 import { MachineModule } from '../machine/machine.module';
 import { TaskSessionService } from '../task-session/task-session.service';
+import { ActivitiesService } from '../activities/activities.service';
 
 @Module({
   controllers: [TaskController],
-  providers: [TaskService, TaskSessionService],
+  providers: [TaskService, TaskSessionService, ActivitiesService],
   imports: [FieldModule, WorkerModule, MachineModule],
+  exports: [TaskService],
 })
 export class TaskModule {}
