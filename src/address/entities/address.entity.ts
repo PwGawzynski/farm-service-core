@@ -15,16 +15,7 @@ import AddressConstants from '../../../FarmServiceApiTypes/Address/Constants';
  */
 @Entity()
 export class Address extends BaseEntity {
-  constructor(props?: {
-    city: string;
-    county: string;
-    postalCode: string;
-    houseNumber: string;
-    apartmentNumber?: string | undefined;
-    user?: Promise<User>;
-    voivodeship?: string;
-    street?: string;
-  }) {
+  constructor(props?: Partial<Address>) {
     super();
     if (props) Object.assign(this, props);
   }
