@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { TaskSessionService } from '../task-session/task-session.service';
 import { concatMap, interval, startWith, timeout } from 'rxjs';
 import { Equal } from 'typeorm';
 import {
@@ -9,49 +7,79 @@ import {
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { Company } from '../company/entities/company.entity';
 import { TaskSession } from '../task-session/entities/task-session.entity';
-import { ActivityResponseDto } from './dto/response/activity-response.dto';
 import { ActivityType } from '../../FarmServiceApiTypes/Activity/Enums';
+import { Activity } from './entities/activity.entity';
+import { CompanyActivityResponseDto } from './dto/response/comapny-activity-response.dto';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class ActivitiesService {
-  constructor(private readonly TaskSessionService: TaskSessionService) {}
-
-  private async produceResponseTaskObject(session: TaskSession) {
+  private async produceSessionActivityResponse(activity: Activity) {
+    const causer = activity.causer;
     return {
-      session: await this.TaskSessionService.prepareResponseDto(session),
-      workerId: (await session.worker).id,
-      fieldId: (await session.field).id,
-      taskId: (await session.task).id,
-      workerName: (await (await (await session.worker).user).personalData).name,
-      workerSurname: (await (await (await session.worker).user).personalData)
-        .surname,
-      fieldName: (await session.field).nameLabel,
-      type: session.closedAt
-        ? ActivityType.CLOSE_SESSION
-        : ActivityType.OPEN_SESSION,
-    } as ActivityResponseDto;
+      sessionId: activity.session.id,
+      taskId: (await activity.task).id,
+      fieldId: (await activity.field).id,
+      causerId: activity.causer.id,
+      causerShortcutData: {
+        name: (await causer.personalData).name,
+        surname: (await causer.personalData).surname,
+        role: causer.role,
+      },
+      fieldShortcutData: {
+        nameLabel: (await activity.field).nameLabel,
+      },
+      type: activity.type,
+      actionDate: activity.actionDate,
+    } as CompanyActivityResponseDto;
+  }
+
+  async createSessionActivity(
+    session: TaskSession,
+    causer: User,
+    actionType: ActivityType,
+  ) {
+    const worker = await session.worker;
+    const field = session.field;
+    const task = session.task;
+    const company = await await worker.company;
+    const activity = new Activity({
+      type: actionType,
+      causer: causer,
+      company,
+      field,
+      task: Promise.resolve(task),
+      session: session,
+      causerRole: causer.role,
+    });
+    activity.save();
+    return activity;
   }
 
   /**
    * -----------------------------SSE METHODS--------------------------------
    */
-  async companyActivities(company: Company) {
-    return interval(30000).pipe(
+  async getByCompany(company: Company) {
+    let prevActivitiesLen = 0;
+    return interval(1000).pipe(
       startWith(0),
       concatMap(async () => {
-        const sessions = await TaskSession.find({
-          where: { task: { worker: { company: { id: Equal(company.id) } } } },
+        const activities = await Activity.find({
+          where: { company: { id: Equal(company.id) } },
         });
-        if (sessions.length) {
-          const activities = await Promise.all(
-            sessions.map(async (s) => {
-              return await this.produceResponseTaskObject(s);
-            }),
-          );
-          return JSON.stringify({
-            code: ResponseCode.ProcessedCorrect,
-            payload: activities,
-          } as ResponseObject<ActivityResponseDto[]>);
+        console.log(activities[0], 'TEST');
+        if (activities.length) {
+          if (prevActivitiesLen !== activities.length) {
+            prevActivitiesLen = activities.length;
+            return JSON.stringify({
+              code: ResponseCode.ProcessedCorrect,
+              payload: await Promise.all(
+                activities.map(
+                  async (a) => await this.produceSessionActivityResponse(a),
+                ),
+              ),
+            } as ResponseObject<CompanyActivityResponseDto[]>);
+          }
         }
       }),
       timeout(1000 * 60 * 60 * 24),
