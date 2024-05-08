@@ -17,6 +17,8 @@ import FieldConstants from '../../../FarmServiceApiTypes/Field/Constants';
 import { User } from '../../user/entities/user.entity';
 import { Order } from '../../order/entities/order.entity';
 import { Task } from '../../task/entities/task.entity';
+import { TaskSession } from '../../task-session/entities/task-session.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity()
 export class Field extends BaseEntity {
@@ -84,8 +86,14 @@ export class Field extends BaseEntity {
   @OneToMany(() => Task, (task) => task.field)
   tasks: Promise<Task[] | null>;
 
+  @OneToMany(() => TaskSession, (session) => session.field)
+  sessions: Promise<TaskSession[] | null>;
+
   @ManyToMany(() => Order, (order) => order.fields)
   orders: Promise<Order[] | null>;
+
+  @OneToMany(() => Activity, (activity) => activity.field, { nullable: true })
+  activities: Promise<Activity[] | null>;
 
   async _shouldNotExist() {
     const exist = await Field.findOne({
