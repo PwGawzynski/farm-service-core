@@ -4,9 +4,13 @@ import { Equal, IsNull } from 'typeorm';
 import { TaskSessionResponseDto } from './dto/response/task-session-response.dto';
 import { Task } from '../task/entities/task.entity';
 import { TaskSessionEntityDto } from './dto/TaskSessionEntity.dto';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ActivitiesService } from '../activities/activities.service';
 
 @Injectable()
 export class TaskSessionService {
+  constructor(private readonly ActivitiesService: ActivitiesService) {}
+
   async preOpenValidate(workerId: string) {
     const existOpenedSession = await TaskSession.findOne({
       where: {
@@ -36,6 +40,7 @@ export class TaskSessionService {
     await task.worker;
     session.worker = task.worker;
     session.field = task.field;
+    session.task = task;
     if (sessionData) {
       session.onOpenWorkerLatitude = sessionData.workerLatitude;
       session.onOpenWorkerLongitude = sessionData.workerLongitude;
