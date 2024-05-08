@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ActivitiesController } from './activities.controller';
 import { ActivitiesService } from './activities.service';
-import { TaskSessionService } from '../task-session/task-session.service';
 
 @Module({
   controllers: [ActivitiesController],
-  providers: [ActivitiesService, TaskSessionService],
+  providers: [ActivitiesService],
+  exports: [ActivitiesService],
 })
 export class ActivitiesModule {}
