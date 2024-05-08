@@ -3,12 +3,14 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Task } from '../../task/entities/task.entity';
 import FieldAddressConstants from '../../../FarmServiceApiTypes/FiledAddress/Constants';
 import { Worker } from '../../worker/entities/worker.entity';
 import { Field } from '../../field/entities/field.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity()
 export class TaskSession extends BaseEntity {
@@ -74,4 +76,7 @@ export class TaskSession extends BaseEntity {
     nullable: false,
   })
   field: Promise<Field>;
+
+  @OneToMany(() => Activity, (a) => a.session, { nullable: true })
+  activities: Promise<Activity[] | null>;
 }
