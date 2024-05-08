@@ -20,11 +20,11 @@ export class OrderResponseWhiteList {
   @Expose()
   createdAt?: Date;
   @Expose()
+  totalArea?: number;
+  @Expose()
   openedAt?: Date;
   @Expose()
   additionalInfo: string;
-  @Expose()
-  pricePerUnit?: number;
 }
 
 @Exclude()
