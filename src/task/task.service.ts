@@ -20,6 +20,9 @@ import { concatMap, interval, startWith, timeout } from 'rxjs';
 import { Worker } from '../worker/entities/worker.entity';
 import { TaskSession } from '../task-session/entities/task-session.entity';
 import { TaskSessionEntityDto } from '../task-session/dto/TaskSessionEntity.dto';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ActivitiesService } from '../activities/activities.service';
+import { ActivityType } from '../../FarmServiceApiTypes/Activity/Enums';
 
 @Injectable()
 export class TaskService {
@@ -28,6 +31,7 @@ export class TaskService {
     private readonly WorkerService: WorkerService,
     private readonly MachineService: MachineService,
     private readonly TaskSessionService: TaskSessionService,
+    private readonly ActivitiesService: ActivitiesService,
   ) {}
 
   /**
@@ -50,7 +54,7 @@ export class TaskService {
     }
   }
 
-  private async produceResponseTaskObject(t: Task) {
+  async produceResponseTaskObject(t: Task) {
     const sessions = await t.sessions;
     return {
       id: t.id,
@@ -228,13 +232,20 @@ export class TaskService {
       );
     this.validateSessionData(sessionData);
     const openedSession = await this.TaskSessionService.open(task, sessionData);
-    task.openedAt = new Date();
-    task.save();
-    await this.updateSessions(task, openedSession);
-    return {
-      code: ResponseCode.ProcessedCorrect,
-      payload: await this.produceResponseTaskObject(task),
-    } as ResponseObject<TaskResponseDto>;
+    if (openedSession) {
+      this.ActivitiesService.createSessionActivity(
+        openedSession,
+        await worker.user,
+        ActivityType.OPEN_TASK,
+      );
+      task.openedAt = new Date();
+      task.save();
+      await this.updateSessions(task, openedSession);
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: await this.produceResponseTaskObject(task),
+      } as ResponseObject<TaskResponseDto>;
+    }
   }
 
   async closeTask(
@@ -249,14 +260,21 @@ export class TaskService {
       task,
       sessionData,
     );
-    task.closedAt = new Date();
-    task.isDone = true;
-    task.save();
-    await this.updateSessions(task, updatedSession);
-    return {
-      code: ResponseCode.ProcessedCorrect,
-      payload: await this.produceResponseTaskObject(task),
-    } as ResponseObject<TaskResponseDto>;
+    if (updatedSession) {
+      this.ActivitiesService.createSessionActivity(
+        updatedSession,
+        await worker.user,
+        ActivityType.CLOSE_TASK,
+      );
+      task.closedAt = new Date();
+      task.isDone = true;
+      task.save();
+      await this.updateSessions(task, updatedSession);
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: await this.produceResponseTaskObject(task),
+      } as ResponseObject<TaskResponseDto>;
+    }
   }
 
   async closeByOwner(taskId: string, company: Company) {
@@ -264,14 +282,16 @@ export class TaskService {
     if (!task) throw new ConflictException('Task not found');
     this.taskOpenedUnfinished(task);
     const updatedSession = await this.TaskSessionService.closeByOwner(task);
-    task.closedAt = new Date();
-    task.isDone = true;
-    task.save();
-    await this.updateSessions(task, updatedSession);
-    return {
-      code: ResponseCode.ProcessedCorrect,
-      payload: await this.produceResponseTaskObject(task),
-    } as ResponseObject<TaskResponseDto>;
+    if (updatedSession) {
+      task.closedAt = new Date();
+      task.isDone = true;
+      task.save();
+      await this.updateSessions(task, updatedSession);
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: await this.produceResponseTaskObject(task),
+      } as ResponseObject<TaskResponseDto>;
+    }
   }
 
   async pause(
@@ -284,11 +304,23 @@ export class TaskService {
     const closed = await this.TaskSessionService.close(task, sessionData);
     if (closed) {
       task.lastPausedAt = new Date();
+      this.ActivitiesService.createSessionActivity(
+        closed,
+        await worker.user,
+        ActivityType.OPEN_SESSION,
+      );
       task.save();
       await this.updateSessions(task, closed);
     } else {
       this.validateSessionData(sessionData);
       const opened = await this.TaskSessionService.open(task, sessionData);
+      if (opened) {
+        this.ActivitiesService.createSessionActivity(
+          opened,
+          await worker.user,
+          ActivityType.CLOSE_SESSION,
+        );
+      }
       await this.updateSessions(task, opened);
     }
     return {
