@@ -15,6 +15,7 @@ import { Company } from '../../company/entities/company.entity';
 import { Position, Status } from '../../../FarmServiceApiTypes/Worker/Enums';
 import { ConflictException } from '@nestjs/common';
 import { Task } from '../../task/entities/task.entity';
+import { TaskSession } from '../../task-session/entities/task-session.entity';
 
 @Entity()
 export class Worker extends BaseEntity {
@@ -39,6 +40,10 @@ export class Worker extends BaseEntity {
   @OneToMany(() => Task, (task) => task.worker, { nullable: true })
   @JoinTable({ name: 'worker_tasks' })
   tasks?: Promise<Task[]>;
+
+  @OneToMany(() => TaskSession, (task) => task.worker, { nullable: true })
+  @JoinTable({ name: 'worker_tasks' })
+  sessions?: Promise<TaskSession[]>;
 
   @Column({
     type: 'enum',
