@@ -22,8 +22,8 @@ export class OrderService {
       performanceDate: order.performanceDate,
       createdAt: order.createdAt,
       openedAt: order.openedAt,
+      totalArea: order.totalArea,
       additionalInfo: order.additionalInfo,
-      pricePerUnit: order.pricePerUnit,
     });
   }
 
@@ -82,12 +82,11 @@ export class OrderService {
 
   async update(updateData: UpdateOrderDto, company: Company) {
     const order = updateData.order;
-    const { pricePerUnit, additionalInfo, performanceDate, name } = updateData;
+    const { additionalInfo, performanceDate, name } = updateData;
     if ((await order.company).id !== company.id)
       throw new ConflictException(
         'You cannot manage order which bot belonging to yours company',
       );
-    order.pricePerUnit = pricePerUnit;
     order.additionalInfo = additionalInfo;
     order.performanceDate = performanceDate;
     order.name = name;
