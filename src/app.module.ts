@@ -25,6 +25,7 @@ import { FieldAddressModule } from './field-address/field-address.module';
 import { OrderModule } from './order/order.module';
 import { TaskModule } from './task/task.module';
 import { TaskSessionService } from './task-session/task-session.service';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { TaskSessionService } from './task-session/task-session.service';
     FieldAddressModule,
     OrderModule,
     TaskModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [

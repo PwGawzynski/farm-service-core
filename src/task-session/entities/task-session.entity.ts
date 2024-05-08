@@ -3,10 +3,14 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Task } from '../../task/entities/task.entity';
 import FieldAddressConstants from '../../../FarmServiceApiTypes/FiledAddress/Constants';
+import { Worker } from '../../worker/entities/worker.entity';
+import { Field } from '../../field/entities/field.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity()
 export class TaskSession extends BaseEntity {
@@ -62,4 +66,17 @@ export class TaskSession extends BaseEntity {
     onDelete: 'CASCADE',
   })
   task: Task;
+
+  @ManyToOne(() => Worker, (worker) => worker.sessions, {
+    nullable: false,
+  })
+  worker: Promise<Worker>;
+
+  @ManyToOne(() => Field, (field) => field.sessions, {
+    nullable: false,
+  })
+  field: Promise<Field>;
+
+  @OneToMany(() => Activity, (a) => a.session, { nullable: true })
+  activities: Promise<Activity[] | null>;
 }

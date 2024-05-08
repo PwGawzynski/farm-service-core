@@ -4,9 +4,13 @@ import { Equal, IsNull } from 'typeorm';
 import { TaskSessionResponseDto } from './dto/response/task-session-response.dto';
 import { Task } from '../task/entities/task.entity';
 import { TaskSessionEntityDto } from './dto/TaskSessionEntity.dto';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ActivitiesService } from '../activities/activities.service';
 
 @Injectable()
 export class TaskSessionService {
+  constructor(private readonly ActivitiesService: ActivitiesService) {}
+
   async preOpenValidate(workerId: string) {
     const existOpenedSession = await TaskSession.findOne({
       where: {
@@ -21,8 +25,8 @@ export class TaskSessionService {
     }
   }
 
-  prepareResponseDto(task: TaskSession) {
-    return new TaskSessionResponseDto(task);
+  prepareResponseDto(session: TaskSession) {
+    return new TaskSessionResponseDto({ ...session });
   }
 
   async open(
@@ -31,6 +35,12 @@ export class TaskSessionService {
   ): Promise<TaskSession> {
     await this.preOpenValidate((await task.worker).id);
     const session = new TaskSession();
+    // it have to be done because task field is null if not awaited
+    await task.field;
+    await task.worker;
+    session.worker = task.worker;
+    session.field = task.field;
+    session.task = task;
     if (sessionData) {
       session.onOpenWorkerLatitude = sessionData.workerLatitude;
       session.onOpenWorkerLongitude = sessionData.workerLongitude;
@@ -67,14 +77,5 @@ export class TaskSessionService {
       session.save();
       return session;
     }
-  }
-
-  async closeSession(session: TaskSession) {
-    if (session) {
-      session.closedAt = new Date();
-      session.save();
-      return session;
-    }
-    throw new Error('Task session not found');
   }
 }

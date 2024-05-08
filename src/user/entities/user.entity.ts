@@ -4,6 +4,7 @@ import {
   Entity,
   Equal,
   JoinColumn,
+  ManyToMany,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -18,6 +19,7 @@ import { Client } from '../../clients/entities/client.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Worker } from '../../worker/entities/worker.entity';
 import { Field } from '../../field/entities/field.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 /**
  * Class represents User entity in db
@@ -85,6 +87,15 @@ export class User extends BaseEntity {
     nullable: true,
   })
   ownedFields: Promise<Field[]>;
+
+  @OneToMany(() => Activity, (activity) => activity.causer, { nullable: true })
+  activities: Promise<Activity[]>;
+
+  @ManyToMany(() => Activity, (activity) => activity.receivers, {
+    nullable: true,
+  })
+  receivedActivities: Promise<Activity[]>;
+
   /**
    * Checks if entity already exist in db
    * @param key one of User properties [keyof User]

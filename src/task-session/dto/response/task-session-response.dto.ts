@@ -1,9 +1,14 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+import { Task } from '../../../task/entities/task.entity';
 
+@Exclude()
 export class CreateTaskSessionResponseWhiteList {
   constructor(partial: Partial<CreateTaskSessionResponseWhiteList>) {
     Object.assign(this, partial);
   }
+  @Exclude()
+  @Type(() => Task)
+  task: Task;
 
   @Expose()
   openedAt: Date;
@@ -26,4 +31,7 @@ export class TaskSessionResponseDto extends CreateTaskSessionResponseWhiteList {
     super(partial);
     Object.assign(this, partial);
   }
+  @Exclude()
+  @Type(() => Task)
+  task: Task;
 }

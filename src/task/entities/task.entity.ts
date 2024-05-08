@@ -14,6 +14,7 @@ import { Company } from '../../company/entities/company.entity';
 import { Machine } from '../../machine/entities/machine.entity';
 import { TaskType } from '../../../FarmServiceApiTypes/Task/Enums';
 import { TaskSession } from '../../task-session/entities/task-session.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity()
 export class Task extends BaseEntity {
@@ -98,6 +99,9 @@ export class Task extends BaseEntity {
     cascade: true,
   })
   sessions: Promise<TaskSession[] | null>;
+
+  @OneToMany(() => Activity, (activity) => activity.task, { nullable: true })
+  activities: Promise<Activity[] | null>;
 
   //async _shouldBeValidWhenCreate(company: Company) {}
 }

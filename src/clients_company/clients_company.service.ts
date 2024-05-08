@@ -10,13 +10,15 @@ import {
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { UpdateClientsCompanyDto } from './dto/update-clients_company.dto';
+import { AddressResponseDto } from '../address/dto/response/address.response.dto';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class ClientsCompanyService {
   async _createResBase(company: ClientsCompany) {
     return new ClientsCompanyResponseDto({
       ...company,
-      address: await company.address,
+      address: new AddressResponseDto(await company.address),
     });
   }
   async _createResObject(company: ClientsCompany) {
@@ -30,7 +32,12 @@ export class ClientsCompanyService {
     client: Client,
     createClientsCompanyDto: CreateClientsCompanyDto,
   ) {
-    const companyAddress = new Address(createClientsCompanyDto.address);
+    const companyAddress = new Address({
+      ...createClientsCompanyDto.address,
+      id: uuid(),
+    });
+    await companyAddress.save();
+
     const clients_company = new ClientsCompany({
       ...createClientsCompanyDto,
       address: Promise.resolve(companyAddress),
@@ -39,8 +46,7 @@ export class ClientsCompanyService {
     await clients_company._shouldNotExist('NIP', 'NIP already exists');
     await clients_company._shouldNotExist('email', 'Email already exists');
     await clients_company._shouldNotExist('name', 'Name already exists');
-    await companyAddress.save();
-    clients_company.save();
+    await clients_company.save();
     return this._createResBase(clients_company);
   }
 

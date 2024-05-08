@@ -25,6 +25,7 @@ import { PersonalData } from '../personal-data/entities/personalData.entity';
 import { ClientsCompany } from '../clients_company/entities/clients_company.entity';
 import { Address } from '../address/entities/address.entity';
 import { Equal } from 'typeorm';
+import { AddressResponseDto } from '../address/dto/response/address.response.dto';
 
 @Injectable()
 export class ClientsService {
@@ -46,7 +47,7 @@ export class ClientsService {
       email: (await user.account).email,
       user: new UserResponseDto({
         role: user.role,
-        address: await user.address,
+        address: new AddressResponseDto({ ...(await user.address) }),
         personalData: new PersonalDataResponseDto({
           ...personalData,
         }),
@@ -54,7 +55,9 @@ export class ClientsService {
       company: clientsCompany
         ? new ClientsCompanyResponseDto({
             ...clientsCompany,
-            address: await clientsCompany.address,
+            address: new AddressResponseDto({
+              ...(await clientsCompany.address),
+            }),
           })
         : undefined,
     });

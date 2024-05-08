@@ -18,6 +18,7 @@ import { Machine } from '../../machine/entities/machine.entity';
 import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants';
 import { Order } from '../../order/entities/order.entity';
 import { Task } from '../../task/entities/task.entity';
+import { Activity } from '../../activities/entities/activity.entity';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -54,7 +55,7 @@ export class Company extends BaseEntity {
   email: string;
 
   @OneToOne(() => Address, { nullable: false })
-  @JoinColumn({ name: 'address_id' })
+  @JoinColumn()
   address: Promise<Address>;
 
   @OneToOne(() => User, { nullable: false })
@@ -75,6 +76,8 @@ export class Company extends BaseEntity {
 
   @OneToMany(() => Task, (task) => task.company, { nullable: true })
   tasks: Promise<Task[] | null>;
+  @OneToMany(() => Activity, (activity) => activity.company, { nullable: true })
+  activities: Promise<Activity[] | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     if (
