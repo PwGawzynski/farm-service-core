@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  VirtualColumn,
 } from 'typeorm';
 import OrderConstants from '../../../FarmServiceApiTypes/Order/Constants';
 import { Company } from '../../company/entities/company.entity';
@@ -65,14 +66,6 @@ export class Order extends BaseEntity {
   createdAt?: Date;
 
   @Column({
-    type: 'timestamp',
-    nullable: true,
-    name: 'opened_at',
-    comment: 'date of start first task from order',
-  })
-  openedAt?: Date;
-
-  @Column({
     type: 'varchar',
     length: OrderConstants.ADDITIONAL_INFO_MAX_LEN,
     nullable: true,
@@ -80,22 +73,19 @@ export class Order extends BaseEntity {
   })
   additionalInfo?: string;
 
-  // TODO virtual column for totalDoneArea based on isDone in connection table ManyToMany order-field(Task)
-  /*@VirtualColumn({
+  @VirtualColumn({
     type: 'mediumint',
     query: (alias) =>
-      `SELECT SUM(area) FROM field WHERE field.orderId = ${alias}.id `,
+      `SELECT SUM(field.area)  FROM task INNER JOIN  field ON task.field_id = field.id WHERE order_id=${alias}.id`,
   })
-  totalArea?: string;
-*/
-  @Column({
-    type: 'numeric',
-    precision: 9,
-    scale: OrderConstants.MIN_PRICE_PER_UNIT_SCALE,
-    name: 'price_per_unit',
-    nullable: true,
+  totalArea?: number;
+
+  @VirtualColumn({
+    type: 'timestamp',
+    query: (alias) =>
+      `SELECT task.opened_at FROM task WHERE task.order_id = ${alias}.id ORDER BY task.opened_at DESC LIMIT 1`,
   })
-  pricePerUnit?: number;
+  openedAt?: Date;
 
   @ManyToOne(() => Company, (company) => company.orders, {
     nullable: false,
