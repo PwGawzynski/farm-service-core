@@ -15,7 +15,7 @@ export class TaskSessionEntityDto {
   )
   @IsLongitude()
   @IsNotEmpty({ message: 'Longitude code cannot be empty' })
-  onOpenWorkerLatitude: string;
+  workerLatitude: string;
 
   @IsString({ message: 'Latitude code must be a string type' })
   @Length(
@@ -24,5 +24,5 @@ export class TaskSessionEntityDto {
   )
   @IsLatitude()
   @IsNotEmpty({ message: 'Latitude code cannot be empty' })
-  onopenWorkerLongitude: string;
+  workerLongitude: string;
 }
