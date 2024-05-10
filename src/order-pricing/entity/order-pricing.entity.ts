@@ -21,13 +21,17 @@ export class OrderPricing extends BaseEntity {
   taskType: TaskType;
 
   @Column({
-    type: 'decimal',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
     nullable: false,
   })
   price: number;
 
   @Column({
-    type: 'decimal',
+    type: 'numeric',
+    scale: 2,
+    precision: 10,
     nullable: false,
   })
   tax: number;
