@@ -3,6 +3,7 @@ import { TaskType } from '../../FarmServiceApiTypes/Task/Enums';
 import { OrderPricing } from './entity/order-pricing.entity';
 import { Equal } from 'typeorm';
 import { OrderPricingResponseDto } from './dto/response/order-pricing-response.dto';
+import { OrderPricingConstants } from '../../FarmServiceApiTypes/OrderPricing/Constants';
 
 @Injectable()
 export class OrderPricingService {
@@ -19,7 +20,21 @@ export class OrderPricingService {
       tax: orderPricing[0].tax,
     });
   }
+
+  private validate(price: number, tax: number) {
+    if (price < OrderPricingConstants.MIN_PRICE) {
+      throw new Error('Price is too low');
+    }
+    if (
+      tax < OrderPricingConstants.MIN_TAX ||
+      tax > OrderPricingConstants.MAX_TAX
+    ) {
+      throw new Error('Tax is out of range');
+    }
+  }
+
   async save(orderId: string, taskType: TaskType, price: number, tax: number) {
+    this.validate(price, tax);
     const exist = await OrderPricing.findOne({
       where: {
         order: { id: Equal(orderId) },
@@ -29,6 +44,7 @@ export class OrderPricingService {
     });
     if (exist) {
       exist.price = price;
+      tax && (exist.tax = tax);
       return exist.save();
     }
     return OrderPricing.create({
