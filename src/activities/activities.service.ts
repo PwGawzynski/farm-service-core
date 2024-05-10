@@ -61,7 +61,7 @@ export class ActivitiesService {
    */
   async getByCompany(company: Company) {
     let prevActivitiesLen = 0;
-    return interval(1000).pipe(
+    return interval(10000).pipe(
       startWith(0),
       concatMap(async () => {
         const activities = await Activity.find({
