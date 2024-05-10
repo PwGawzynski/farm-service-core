@@ -10,10 +10,16 @@ import {
 import { v4 as uuid } from 'uuid';
 import { OrderStatus } from '../../FarmServiceApiTypes/Order/Enums';
 import { UpdateOrderDto } from './dto/update-order.dto';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { OrderPricingService } from '../order-pricing/order-pricing.service';
+import { CreateOrderPricingDto } from '../order-pricing/dto/create-order-pricing.dto';
+import { OrderPricing } from '../order-pricing/entity/order-pricing.entity';
 
 @Injectable()
 export class OrderService {
-  private async _prepareResponse(order: Order) {
+  constructor(private readonly OrderPricingService: OrderPricingService) {}
+  private async _prepareResponse(order: Order, pricing_?: OrderPricing[]) {
+    const pricing = pricing_ || (await order.prices);
     return new OrderResponseDto({
       id: order.id,
       clientId: (await order.client).id,
@@ -24,13 +30,19 @@ export class OrderService {
       openedAt: order.openedAt,
       totalArea: order.totalArea,
       additionalInfo: order.additionalInfo,
+      pricing: pricing
+        ? this.OrderPricingService.prepareResponse(pricing)
+        : undefined,
     });
   }
 
-  private async _prepareCorrectResponse(order: Order) {
+  private async _prepareCorrectResponse(
+    order: Order,
+    pricing?: OrderPricing[],
+  ) {
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: await this._prepareResponse(await order),
+      payload: await this._prepareResponse(await order, pricing),
     } as ResponseObject<OrderResponseDto>;
   }
 
@@ -47,25 +59,24 @@ export class OrderService {
       client: Promise.resolve(client),
     });
     newOrder.save();
-    console.log(await this._prepareCorrectResponse(newOrder));
     return await this._prepareCorrectResponse(newOrder);
   }
 
-  /*findAll() {
-    return `This action returns all order`;
+  async updatePricing(data: CreateOrderPricingDto, company: Company) {
+    const order = data.order;
+    if ((await order.company).id !== company.id)
+      throw new ConflictException(
+        'You cannot manage order which not belonging to yours company',
+      );
+    const prices = await this.OrderPricingService.save(
+      order.id as string,
+      data.taskType,
+      data.price,
+      data.tax,
+    );
+    const oldPrices = (await order.prices) || [];
+    return this._prepareCorrectResponse(order, [...oldPrices, prices]);
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} order`;
-  }*/
   async getAll(company: Company) {
     const orders = await company.orders;
     if (!orders)
