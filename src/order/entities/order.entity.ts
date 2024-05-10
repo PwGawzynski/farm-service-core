@@ -15,6 +15,7 @@ import { Field } from '../../field/entities/field.entity';
 import { OrderStatus } from '../../../FarmServiceApiTypes/Order/Enums';
 import { Client } from '../../clients/entities/client.entity';
 import { Task } from '../../task/entities/task.entity';
+import { OrderPricing } from '../../order-pricing/entity/order-pricing.entity';
 
 @Entity()
 export class Order extends BaseEntity {
@@ -101,4 +102,7 @@ export class Order extends BaseEntity {
 
   @OneToMany(() => Task, (t) => t.order, { nullable: true })
   tasks?: Promise<Task[] | null>;
+
+  @OneToMany(() => OrderPricing, (p) => p.order, { nullable: true })
+  prices?: Promise<OrderPricing[] | null>;
 }
