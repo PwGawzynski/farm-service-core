@@ -1,5 +1,6 @@
 import { Exclude, Expose } from 'class-transformer';
 import { OrderStatus } from '../../../../FarmServiceApiTypes/Order/Enums';
+import { OrderPricingResponseDto } from '../../../order-pricing/dto/response/order-pricing-response.dto';
 
 export class OrderResponseWhiteList {
   constructor(partial: Partial<OrderResponseDto>) {
@@ -25,6 +26,8 @@ export class OrderResponseWhiteList {
   openedAt?: Date;
   @Expose()
   additionalInfo: string;
+  @Expose()
+  pricing?: OrderPricingResponseDto;
 }
 
 @Exclude()
