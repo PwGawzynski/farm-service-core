@@ -5,6 +5,7 @@ import { GetOwnedCompany } from '../../decorators/user.decorator';
 import { Company } from '../company/entities/company.entity';
 import { Owner } from '../../decorators/auth.decorators';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { CreateOrderPricingDto } from '../order-pricing/dto/create-order-pricing.dto';
 
 @Controller('order')
 export class OrderController {
@@ -32,6 +33,15 @@ export class OrderController {
     @GetOwnedCompany() company: Company,
   ) {
     return this.orderService.update(updateData, company);
+  }
+
+  @Put('update-pricing')
+  @Owner()
+  updatePricing(
+    @Body() updateData: CreateOrderPricingDto,
+    @GetOwnedCompany() company: Company,
+  ) {
+    return this.orderService.updatePricing(updateData, company);
   }
   /*@Get()
   findAll() {
