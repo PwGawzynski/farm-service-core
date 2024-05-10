@@ -14,6 +14,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderPricingService } from '../order-pricing/order-pricing.service';
 import { CreateOrderPricingDto } from '../order-pricing/dto/create-order-pricing.dto';
 import { OrderPricing } from '../order-pricing/entity/order-pricing.entity';
+import { TaskType } from '../../FarmServiceApiTypes/Task/Enums';
 
 @Injectable()
 export class OrderService {
@@ -63,19 +64,27 @@ export class OrderService {
   }
 
   async updatePricing(data: CreateOrderPricingDto, company: Company) {
+    console.log(data);
     const order = data.order;
+    // due to orderId is optional in entity
+    if (!order.id) throw new ConflictException('Order ID is required');
     if ((await order.company).id !== company.id)
       throw new ConflictException(
         'You cannot manage order which not belonging to yours company',
       );
-    const prices = await this.OrderPricingService.save(
-      order.id as string,
-      data.taskType,
-      data.price,
-      data.tax,
-    );
+    const prices: OrderPricing[] = [];
+    for (const [key, val] of data.prices) {
+      prices.push(
+        await this.OrderPricingService.save(
+          order.id,
+          TaskType[key],
+          val,
+          data.tax,
+        ),
+      );
+    }
     const oldPrices = (await order.prices) || [];
-    return this._prepareCorrectResponse(order, [...oldPrices, prices]);
+    return this._prepareCorrectResponse(order, [...oldPrices, ...prices]);
   }
   async getAll(company: Company) {
     const orders = await company.orders;
