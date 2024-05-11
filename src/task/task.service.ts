@@ -23,6 +23,7 @@ import { TaskSessionEntityDto } from '../task-session/dto/TaskSessionEntity.dto'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../../FarmServiceApiTypes/Activity/Enums';
+import { OrderStatus } from '../../FarmServiceApiTypes/Order/Enums';
 
 @Injectable()
 export class TaskService {
@@ -166,6 +167,11 @@ export class TaskService {
       );
   }
 
+  private async validateOrderStatus(order: Order, expectedStatus: OrderStatus) {
+    if (order.status !== expectedStatus)
+      throw new ConflictException('Order is not in correct status');
+  }
+
   /**
    * -----------------------------CRUD METHODS--------------------------------
    */
@@ -178,7 +184,17 @@ export class TaskService {
     );
     const { tasks } = createTaskDto;
     const createdTasks: TaskResponseDto[] = [];
+    let prevOrder: Order | undefined;
     for (const task of tasks) {
+      if (!prevOrder) {
+        prevOrder = await task.order;
+        task.order.status = OrderStatus.TaskAssigned;
+        task.order.save();
+      } else if (prevOrder.id !== task.order.id) {
+        prevOrder = task.order;
+        task.order.status = OrderStatus.TaskAssigned;
+        task.order.save();
+      }
       const newTask = new Task({
         ...task,
         id: uuid(),
@@ -232,6 +248,8 @@ export class TaskService {
       );
     this.validateSessionData(sessionData);
     const openedSession = await this.TaskSessionService.open(task, sessionData);
+    await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
+    (await task.order).status = OrderStatus.Processing;
     if (openedSession) {
       this.ActivitiesService.createSessionActivity(
         openedSession,
@@ -260,6 +278,7 @@ export class TaskService {
       task,
       sessionData,
     );
+    await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
     if (updatedSession) {
       this.ActivitiesService.createSessionActivity(
         updatedSession,
@@ -280,6 +299,7 @@ export class TaskService {
   async closeByOwner(taskId: string, company: Company) {
     const task = (await company.tasks)?.find((t) => t.id === taskId);
     if (!task) throw new ConflictException('Task not found');
+    await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
     this.taskOpenedUnfinished(task);
     const updatedSession = await this.TaskSessionService.closeByOwner(task);
     if (updatedSession) {
@@ -302,6 +322,7 @@ export class TaskService {
     const task = await this.findAndValidate(taskId, worker);
     this.taskOpenedUnfinished(task);
     const closed = await this.TaskSessionService.close(task, sessionData);
+    await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
     if (closed) {
       task.lastPausedAt = new Date();
       this.ActivitiesService.createSessionActivity(
