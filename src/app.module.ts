@@ -27,6 +27,7 @@ import { TaskModule } from './task/task.module';
 import { TaskSessionService } from './task-session/task-session.service';
 import { ActivitiesModule } from './activities/activities.module';
 import { OrderPricingModule } from './order-pricing/order-pricing.module';
+import { InvoiceModule } from './invoice/invoice.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { OrderPricingModule } from './order-pricing/order-pricing.module';
     TaskModule,
     ActivitiesModule,
     OrderPricingModule,
+    InvoiceModule,
   ],
   controllers: [AppController],
   providers: [
