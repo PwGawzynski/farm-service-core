@@ -34,15 +34,6 @@ export class CreateFieldAddressDto {
   @IsNotEmpty({ message: 'Voivodeship cannot be empty' })
   voivodeship: string;
 
-  /*@IsString({ message: 'Postal code must be a string type' })
-  @Length(
-    FieldAddressConstants.POSTAL_CODE_LEN,
-    FieldAddressConstants.POSTAL_CODE_LEN,
-  )
-  @IsNotEmpty({ message: 'Postal code cannot be empty' })
-  @Matches(/^[0-9]{2}-[0-9]{3}$/)
-  postalCode: string;*/
-
   @IsString({ message: 'Longitude code must be a string type' })
   @Length(
     FieldAddressConstants.LONGITUDE_MIN_LEN,
