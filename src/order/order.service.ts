@@ -15,10 +15,24 @@ import { OrderPricingService } from '../order-pricing/order-pricing.service';
 import { CreateOrderPricingDto } from '../order-pricing/dto/create-order-pricing.dto';
 import { OrderPricing } from '../order-pricing/entity/order-pricing.entity';
 import { TaskType } from '../../FarmServiceApiTypes/Task/Enums';
+import { Equal } from 'typeorm';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { InvoiceService } from '../invoice/invoice.service';
+import { AccountOrderDto } from './dto/account-order.dto';
+import { AccountingResponseDto } from './dto/response/accounting.response.dto';
+import { Task } from '../task/entities/task.entity';
+import { Invoice } from '../invoice/entities/invoice.entity';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly OrderPricingService: OrderPricingService) {}
+  constructor(
+    private readonly OrderPricingService: OrderPricingService,
+    private readonly InvoiceService: InvoiceService,
+  ) {}
+
+  /**
+   * ---------------------------RESPONSE_PREPARATION----------------------------
+   */
   private async _prepareResponse(order: Order, pricing_?: OrderPricing[]) {
     const pricing = pricing_ || (await order.prices);
     return new OrderResponseDto({
@@ -46,6 +60,58 @@ export class OrderService {
       payload: await this._prepareResponse(await order, pricing),
     } as ResponseObject<OrderResponseDto>;
   }
+  /**
+   *
+   * ---------------------------ACCOUNT_VALIDATION------------------------------
+   */
+  private async getOrder(orderId: string, company: Company): Promise<Order> {
+    const order = await Order.findOne({
+      where: { id: Equal(orderId) },
+      relations: ['tasks', 'prices', 'company'],
+    });
+    if (!order || (await order.company).id !== company.id) {
+      throw new ConflictException(
+        'Order not found or does not belong to your company',
+      );
+    }
+    return order;
+  }
+
+  private canAccountOrder(tasks: Task[]): boolean | void {
+    if (tasks?.some((t) => !t.isDone))
+      throw new ConflictException('All tasks must be done');
+    return true;
+  }
+
+  private createAccountRes(
+    invoice: Invoice,
+  ): ResponseObject<AccountingResponseDto> {
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: {
+        invoiceDownloadLink: `http://localhost:3006/invoice/?token=${invoice.publicAccessToken}`,
+      },
+    };
+  }
+
+  /**
+   * ---------------------------ORDER_IN_COMPANY_AND_ID_VALIDATION--------------
+   */
+  private async orderIdAndInCompany(
+    order: Order,
+    company: Company,
+  ): Promise<Order | void> {
+    // due to orderId is optional in entity
+    if (!order.id) throw new ConflictException('Order ID is required');
+    if ((await order.company).id !== company.id)
+      throw new ConflictException(
+        'You cannot manage order which not belonging to yours company',
+      );
+  }
+
+  /**
+   * --------------------------------SERVICES--------------------------------
+   */
 
   async create(createOrderDto: CreateOrderDto, company: Company) {
     const { client } = createOrderDto;
@@ -64,19 +130,13 @@ export class OrderService {
   }
 
   async updatePricing(data: CreateOrderPricingDto, company: Company) {
-    console.log(data);
     const order = data.order;
-    // due to orderId is optional in entity
-    if (!order.id) throw new ConflictException('Order ID is required');
-    if ((await order.company).id !== company.id)
-      throw new ConflictException(
-        'You cannot manage order which not belonging to yours company',
-      );
+    await this.orderIdAndInCompany(order, company);
     const prices: OrderPricing[] = [];
     for (const [key, val] of data.prices) {
       prices.push(
         await this.OrderPricingService.save(
-          order.id,
+          order.id as string,
           TaskType[key],
           val,
           data.tax,
@@ -86,6 +146,7 @@ export class OrderService {
     const oldPrices = (await order.prices) || [];
     return this._prepareCorrectResponse(order, [...oldPrices, ...prices]);
   }
+
   async getAll(company: Company) {
     const orders = await company.orders;
     if (!orders)
@@ -103,15 +164,23 @@ export class OrderService {
   async update(updateData: UpdateOrderDto, company: Company) {
     const order = updateData.order;
     const { additionalInfo, performanceDate, name } = updateData;
-    if ((await order.company).id !== company.id)
-      throw new ConflictException(
-        'You cannot manage order which bot belonging to yours company',
-      );
+    await this.orderIdAndInCompany(order, company);
     order.additionalInfo = additionalInfo;
     order.performanceDate = performanceDate;
     order.name = name;
     order.save();
-    console.log(await this._prepareCorrectResponse(order));
     return await this._prepareCorrectResponse(order);
+  }
+
+  async account(orderId: string, company: Company, data: AccountOrderDto) {
+    const order = await this.getOrder(orderId, company);
+    this.canAccountOrder(data.tasks);
+
+    const res = await this.InvoiceService.create(order, data.tasks);
+    if (res) {
+      order.status = OrderStatus.InAccounting;
+      order.save();
+      return this.createAccountRes(res);
+    }
   }
 }
