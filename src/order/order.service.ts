@@ -22,6 +22,7 @@ import { AccountOrderDto } from './dto/account-order.dto';
 import { AccountingResponseDto } from './dto/response/accounting.response.dto';
 import { Task } from '../task/entities/task.entity';
 import { Invoice } from '../invoice/entities/invoice.entity';
+import { InvoiceResponseDto } from '../invoice/dot/response/invoice-response.dto';
 
 @Injectable()
 export class OrderService {
@@ -88,9 +89,11 @@ export class OrderService {
   ): ResponseObject<AccountingResponseDto> {
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: {
+      payload: new InvoiceResponseDto({
+        number: invoice.number,
         invoiceDownloadLink: `http://localhost:3006/invoice/?token=${invoice.publicAccessToken}`,
-      },
+        issueDate: invoice.issueDate.toISOString(),
+      }),
     };
   }
 
