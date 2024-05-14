@@ -11,7 +11,7 @@ class InvoiceResponseDtoWhiteList {
 
 @Exclude()
 export class InvoiceResponseDto extends InvoiceResponseDtoWhiteList {
-  constructor(props: Partial<InvoiceResponseDtoWhiteList>) {
+  constructor(props: Partial<InvoiceResponseDto>) {
     super();
     if (props) {
       Object.assign(this, props);
