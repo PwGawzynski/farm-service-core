@@ -50,7 +50,7 @@ export class Invoice extends BaseEntity {
   })
   issueDate: Date;
 
-  @ManyToOne(() => Order, (order) => order.invoice)
+  @ManyToOne(() => Order, (order) => order.invoices)
   order: Order;
 
   @ManyToOne(() => Client, (client) => client.invoices)
