@@ -14,12 +14,28 @@ import {
 } from '../../FarmServiceApiTypes/InvoiceEntity/Enums';
 import { Equal } from 'typeorm';
 import { InvoiceRecordData } from '../../internalTypes/InvoiceRecord/types';
+import { Company } from '../company/entities/company.entity';
+import { InvoiceResponseDto } from './dot/response/invoice-response.dto';
+import { GetIp } from '../../Helpers/GetIp';
+import {
+  ResponseCode,
+  ResponseObject,
+} from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 
 @Injectable()
 export class InvoiceService {
   // 1 HEX = 2 characters
   private generateAccessToken(length = 100) {
     return crypto.randomBytes(length).toString('hex');
+  }
+  _prepareResponse(invoice: Invoice) {
+    return new InvoiceResponseDto({
+      number: invoice.number,
+      invoiceDownloadLink: `http://${GetIp()}:3006/invoice/?token=${
+        invoice.publicAccessToken
+      }`,
+      issueDate: invoice.issueDate.toISOString(),
+    });
   }
 
   /**
@@ -164,5 +180,18 @@ export class InvoiceService {
     );
     pdf.pipe(res);
     pdf.end();
+  }
+
+  async getInvoiceForOrder(orderId: string, company: Company) {
+    const invoices = await Invoice.find({
+      where: {
+        order: { id: Equal(orderId) },
+        company: { id: Equal(company.id) },
+      },
+    });
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: invoices.map((i) => this._prepareResponse(i)),
+    } as ResponseObject<InvoiceResponseDto[]>;
   }
 }
