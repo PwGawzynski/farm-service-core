@@ -98,5 +98,5 @@ export class Order extends BaseEntity {
   prices?: Promise<OrderPricing[] | null>;
 
   @OneToMany(() => Invoice, (i) => i.order, { nullable: true })
-  invoice?: Promise<Invoice | null>;
+  invoices?: Promise<Invoice[] | null>;
 }
