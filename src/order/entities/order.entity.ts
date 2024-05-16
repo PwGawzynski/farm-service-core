@@ -16,6 +16,7 @@ import { OrderStatus } from '../../../FarmServiceApiTypes/Order/Enums';
 import { Client } from '../../clients/entities/client.entity';
 import { Task } from '../../task/entities/task.entity';
 import { OrderPricing } from '../../order-pricing/entity/order-pricing.entity';
+import { Invoice } from '../../invoice/entities/invoice.entity';
 
 @Entity()
 export class Order extends BaseEntity {
@@ -41,16 +42,6 @@ export class Order extends BaseEntity {
     nullable: false,
   })
   status?: OrderStatus;
-
-  //TODO move to task entity, it will allow to have multiple service types in one order
-
-  /* @Column({
-    type: 'enum',
-    enum: ServiceType,
-    nullable: false,
-    name: 'Service_Type',
-  })
-  serviceType: ServiceType;*/
 
   @Column({
     type: 'timestamp',
@@ -105,4 +96,7 @@ export class Order extends BaseEntity {
 
   @OneToMany(() => OrderPricing, (p) => p.order, { nullable: true })
   prices?: Promise<OrderPricing[] | null>;
+
+  @OneToMany(() => Invoice, (i) => i.order, { nullable: true })
+  invoices?: Promise<Invoice[] | null>;
 }

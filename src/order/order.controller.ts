@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { GetOwnedCompany } from '../../decorators/user.decorator';
@@ -6,6 +6,7 @@ import { Company } from '../company/entities/company.entity';
 import { Owner } from '../../decorators/auth.decorators';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CreateOrderPricingDto } from '../order-pricing/dto/create-order-pricing.dto';
+import { AccountOrderDto } from './dto/account-order.dto';
 
 @Controller('order')
 export class OrderController {
@@ -43,23 +44,14 @@ export class OrderController {
   ) {
     return this.orderService.updatePricing(updateData, company);
   }
-  /*@Get()
-  findAll() {
-    return this.orderService.findAll();
-  }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.orderService.findOne(+id);
+  @Put('account')
+  @Owner()
+  account(
+    @Query('id') orderId: string,
+    @GetOwnedCompany() company: Company,
+    @Body() data: AccountOrderDto,
+  ) {
+    return this.orderService.account(orderId, company, data);
   }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.orderService.update(+id, updateOrderDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.orderService.remove(+id);
-  }*/
 }

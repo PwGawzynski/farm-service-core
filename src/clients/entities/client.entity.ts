@@ -11,6 +11,7 @@ import { User } from '../../user/entities/user.entity';
 import { ClientsCompany } from '../../clients_company/entities/clients_company.entity';
 import { Company } from '../../company/entities/company.entity';
 import { Order } from '../../order/entities/order.entity';
+import { Invoice } from '../../invoice/entities/invoice.entity';
 
 @Entity()
 export class Client extends BaseEntity {
@@ -36,4 +37,7 @@ export class Client extends BaseEntity {
 
   @OneToMany(() => Order, (order) => order.client, { nullable: true })
   orders: Promise<Order[] | null>;
+
+  @OneToMany(() => Invoice, (invoice) => invoice.client, { nullable: true })
+  invoices: Promise<Invoice[] | null>;
 }

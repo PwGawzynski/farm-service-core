@@ -19,6 +19,7 @@ import { CompanyConstants } from '../../../FarmServiceApiTypes/Company/Constants
 import { Order } from '../../order/entities/order.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Activity } from '../../activities/entities/activity.entity';
+import { Invoice } from '../../invoice/entities/invoice.entity';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -78,6 +79,9 @@ export class Company extends BaseEntity {
   tasks: Promise<Task[] | null>;
   @OneToMany(() => Activity, (activity) => activity.company, { nullable: true })
   activities: Promise<Activity[] | null>;
+
+  @OneToMany(() => Invoice, (invoice) => invoice.company, { nullable: true })
+  invoices: Promise<Invoice[] | null>;
 
   async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
     if (

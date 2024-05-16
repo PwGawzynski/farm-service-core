@@ -52,7 +52,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
      * Now token is validated
      */
     const isTokenCorrect = await super.canActivate(context);
-
     /**
      * Then we check if action is mark by @AllowOnlyByToken()
      * if yes, we will skip finding user in db because action authed only by token
