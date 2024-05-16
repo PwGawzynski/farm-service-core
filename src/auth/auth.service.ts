@@ -134,7 +134,6 @@ export class AuthService {
         AuthService.refreshTokenExpirationTime * 1000
       );
     });
-    console.log(toRemove, 'TR');
     toRemove.forEach((token) => token.remove());
     if (tokens.length - toRemove.length > AuthService.maxRegisteredDevicesCount)
       throw new HttpException(
@@ -221,7 +220,6 @@ export class AuthService {
    * @throws HttpException if operation went wrong
    */
   async login(user: UserDataDto) {
-    console.log(user);
     const validUser = await this.checkUserCredentials(user);
     const account = await validUser.account;
     const accessEntity = new RefreshToken();
@@ -257,7 +255,7 @@ export class AuthService {
    *
    * @throws {HttpException} If the user is not found, if the user is not authorized, or if the token is invalid.
    */
-  async _validateRequest(req: Request) {
+  async _validAndGet(req: Request) {
     if (!req.user)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const validUser = await this.userService.findOneById(req.user['userId']);
@@ -284,7 +282,7 @@ export class AuthService {
    * @throws HttpException in case operation failure
    */
   async refreshToken(req: Request) {
-    const { validUser, account } = await this._validateRequest(req);
+    const { validUser, account } = await this._validAndGet(req);
 
     const newTokenEntity = new RefreshToken();
     const [accessToken, refreshToken, deviceID] = await this.createTokens(
@@ -302,5 +300,12 @@ export class AuthService {
         refresh_token: refreshToken,
       } as AuthToken,
     } as ResponseObject<AuthToken>;
+  }
+
+  async logout(req: Request) {
+    await this._validAndGet(req);
+    return {
+      code: ResponseCode.ProcessedCorrect,
+    } as ResponseObject<string>;
   }
 }

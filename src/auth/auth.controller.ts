@@ -22,6 +22,7 @@ export class AuthController {
 
   /**
    * auth/refresh this method serves refresh token ask
+   * auth/refresh this method serves refresh token ask
    * @param req express type request object taken by decorator
    * @return data object with access token and refresh token
    */
@@ -30,5 +31,12 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(@Req() req: Request) {
     return this.authService.refreshToken(req);
+  }
+
+  @Public()
+  @UseGuards(JwtRefreshAuthGuard)
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    return this.authService.logout(req);
   }
 }
