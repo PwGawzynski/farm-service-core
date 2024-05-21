@@ -31,6 +31,7 @@ import { AddressResponseDto } from '../address/dto/response/address.response.dto
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
 import { Equal } from 'typeorm';
+import { UpdateAccountSettingsDto } from './dto/update-account-settings.dto';
 
 @Injectable()
 export class UserService {
@@ -89,7 +90,7 @@ export class UserService {
       throw new HttpException(
         {
           message: 'Passwords do not match',
-          code: ErrorCodes.BadData,
+          eCode: ErrorCodes.BadData,
         } as ErrorPayloadObject,
         HttpStatus.UNAUTHORIZED,
       );
@@ -278,6 +279,19 @@ export class UserService {
         },
       });
     }
+    return {
+      code: ResponseCode.ProcessedCorrect,
+    } as ResponseObject;
+  }
+
+  async changeAccountSettings(user: User, data: UpdateAccountSettingsDto) {
+    const account = await user.account;
+    for (const key of Object.keys(data)) {
+      if (data[key] !== undefined) {
+        account[key] = data[key];
+      }
+    }
+    account.save();
     return {
       code: ResponseCode.ProcessedCorrect,
     } as ResponseObject;
