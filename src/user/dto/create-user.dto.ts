@@ -30,6 +30,7 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString({
     message: 'Password must be string type',
   })
@@ -45,7 +46,7 @@ export class CreateUserDto {
     minUppercase: 1,
     minSymbols: 1,
   })
-  password: string;
+  password?: string;
 
   @IsDefined()
   @ValidateNested()
