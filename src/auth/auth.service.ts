@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   forwardRef,
   HttpException,
   HttpStatus,
@@ -24,6 +25,9 @@ import {
   ResponseObject,
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { Equal } from 'typeorm';
+import { OAuth2Client } from 'google-auth-library';
+import { GoogleAuthResponseI } from '../../FarmServiceApiTypes/User/Responses';
+import { Account } from '../user/entities/account.entity';
 
 @Injectable()
 export class AuthService {
@@ -32,6 +36,8 @@ export class AuthService {
   private static accessTokenExpirationTime: number;
   private static refreshTokenExpirationTime: number;
   private static maxRegisteredDevicesCount: number;
+  private static iosClientId: string;
+  private static androidClientId: string;
   constructor(
     private jwtService: JwtService,
     @Inject(forwardRef(() => UserService))
@@ -44,6 +50,8 @@ export class AuthService {
       accessTokenExpirationTime,
       refreshTokenExpirationTime,
       maxRegisteredDevicesCount,
+      iosClientId,
+      androidClientId,
     } = this.prepareConfig();
     if (!secret) throw new Error('No secret sign');
     AuthService.secret = secret;
@@ -66,6 +74,10 @@ export class AuthService {
     if (isNaN(parseInt(maxRegisteredDevicesCount)))
       throw new Error('Max registered devices count must be a number');
     AuthService.maxRegisteredDevicesCount = parseInt(maxRegisteredDevicesCount);
+    if (!iosClientId) throw new Error('No ios client id');
+    AuthService.iosClientId = iosClientId;
+    if (!androidClientId) throw new Error('No android client id');
+    AuthService.androidClientId = androidClientId;
   }
 
   /**
@@ -78,6 +90,8 @@ export class AuthService {
    * - accessTokenExpirationTime: The expiration time for access tokens.
    * - refreshTokenExpirationTime: The expiration time for refresh tokens.
    * - maxRegisteredDevicesCount: The maximum number of devices that can be registered per user.
+   * - iosClientId: The client ID for iOS.
+   * - androidClientId: The client ID for Android.
    */
   private prepareConfig() {
     const secret = this.configService.get<string>('secretSign');
@@ -91,12 +105,16 @@ export class AuthService {
     const maxRegisteredDevicesCount = this.configService.get<string>(
       'maxRegisteredDevicesCount',
     );
+    const iosClientId = this.configService.get<string>('iosClientId');
+    const androidClientId = this.configService.get<string>('androidClientId');
     return {
       secret,
       refresh,
       accessTokenExpirationTime,
       refreshTokenExpirationTime,
       maxRegisteredDevicesCount,
+      iosClientId,
+      androidClientId,
     };
   }
 
@@ -110,6 +128,8 @@ export class AuthService {
     const user = await this.userService.findOne(userData.email);
     if (!user) throw new HttpException('Unauthorised', HttpStatus.UNAUTHORIZED);
     const credentials = await user.account;
+    if (!credentials.password)
+      throw new HttpException('Unauthorised', HttpStatus.UNAUTHORIZED);
     return bcrypt
       .compare(userData.password, credentials.password)
       .then((result) => {
@@ -213,6 +233,23 @@ export class AuthService {
       });
   }*/
 
+  private async generateTokens(user: User, account: Account) {
+    const accessEntity = new RefreshToken();
+
+    const [accessToken, refreshToken, deviceID] = await this.createTokens(
+      account.email,
+      user.id,
+      accessEntity.id,
+    );
+
+    await this.remOldRefreshTokens(await user.tokens);
+    accessEntity.deviceId = deviceID;
+    accessEntity.user = Promise.resolve(user);
+    accessEntity.save();
+
+    return { accessToken, refreshToken, deviceID };
+  }
+
   /**
    * login operation driver method
    * @param user data given in req specified by UserDataDto object
@@ -222,19 +259,14 @@ export class AuthService {
   async login(user: UserDataDto) {
     const validUser = await this.checkUserCredentials(user);
     const account = await validUser.account;
-    const accessEntity = new RefreshToken();
-
-    const [accessToken, refreshToken, deviceID] = await this.createTokens(
-      account.email,
-      validUser.id,
-      accessEntity.id,
+    if (!account.isActivated)
+      throw new BadRequestException(
+        'Account is not activated or does not exist',
+      );
+    const { accessToken, refreshToken } = await this.generateTokens(
+      validUser,
+      account,
     );
-
-    await this.remOldRefreshTokens(await validUser.tokens);
-    accessEntity.deviceId = deviceID;
-    accessEntity.user = Promise.resolve(validUser);
-    accessEntity.save();
-
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: {
@@ -262,6 +294,10 @@ export class AuthService {
     if (!validUser)
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     const account = await validUser.account;
+    if (!account.isActivated)
+      throw new BadRequestException(
+        'Account is not activated or does not exist',
+      );
 
     const oldTokensEntity = await RefreshToken.find({
       where: {
@@ -307,5 +343,56 @@ export class AuthService {
     return {
       code: ResponseCode.ProcessedCorrect,
     } as ResponseObject<string>;
+  }
+
+  async googleLogin(idToken: string) {
+    const client = new OAuth2Client();
+    const audience = [AuthService.iosClientId, AuthService.androidClientId];
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: audience,
+    });
+    const payload = ticket.getPayload();
+    const email = payload && payload['email'];
+    const aud = payload && payload['aud'];
+    if (!aud || !audience.includes(aud))
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    if (!email)
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    const user = await User.findOne({
+      where: {
+        account: {
+          email: Equal(email),
+        },
+      },
+    });
+    if (!user) {
+      return {
+        code: ResponseCode.ProcessedCorrect,
+        payload: {
+          email,
+        },
+      } as ResponseObject<GoogleAuthResponseI>;
+    }
+    const account = await user.account;
+    if (!account.isActivated)
+      throw new BadRequestException(
+        'Account is not activated or does not exist',
+      );
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user,
+      account,
+    );
+    return {
+      code: ResponseCode.ProcessedCorrect,
+      payload: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      } as AuthToken,
+    } as ResponseObject<AuthToken>;
+  }
+
+  isMailFree(email: string) {
+    return this.userService.checkIfUserExist(email);
   }
 }

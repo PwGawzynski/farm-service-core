@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserDataDto } from './dto/user-data.dto';
 import { Request } from 'express';
@@ -38,5 +46,17 @@ export class AuthController {
   @Post('logout')
   async logout(@Req() req: Request) {
     return this.authService.logout(req);
+  }
+
+  @Public()
+  @Post('g-login')
+  async googleLogin(@Query('id-token') idToken: string) {
+    return this.authService.googleLogin(idToken);
+  }
+
+  @Public()
+  @Get('exist')
+  isMailFree(@Query('email') email: string) {
+    return this.authService.isMailFree(email);
   }
 }

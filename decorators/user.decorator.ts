@@ -2,17 +2,10 @@ import {
   ConflictException,
   createParamDecorator,
   ExecutionContext,
-  HttpException,
-  HttpStatus,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { printWarnToConsole } from '../Helpers/printWarnToConsole';
 import { User } from '../src/user/entities/user.entity';
-
-export function throwError(msg: string, warnMsg: string, location: string) {
-  printWarnToConsole(warnMsg, location);
-  throw new HttpException('Unauthorised. ' + msg, HttpStatus.UNAUTHORIZED);
-}
 
 /**
  * This decorator allow to inject into function param userEntity
