@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { TaskSession } from './entities/task-session.entity';
 import { Equal, IsNull } from 'typeorm';
 import { TaskSessionResponseDto } from './dto/response/task-session-response.dto';
@@ -77,5 +77,6 @@ export class TaskSessionService {
       session.save();
       return session;
     }
+    throw new BadRequestException('No open session found for this task');
   }
 }
