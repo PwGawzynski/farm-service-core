@@ -1,10 +1,18 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { User } from '../user/entities/user.entity';
-import { throwError } from '../../decorators/user.decorator';
 import { Equal } from 'typeorm';
+import {
+  ErrorCodes,
+  ErrorPayloadObject,
+} from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -22,10 +30,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     });
     const isAccountActivated = !!(await user?.account)?.isActivated;
     if (user && !isAccountActivated) {
-      throwError(
-        `User don't exist or account is not activated`,
-        'USER DONT EXIST IN DB OR NOT ACTIVATED',
-        'JWT_GUARD',
+      throw new HttpException(
+        {
+          message: 'Account is not activated or not exist',
+          code: ErrorCodes.AccountNotActiveOrNotExist,
+        } as ErrorPayloadObject,
+        HttpStatus.UNAUTHORIZED,
       );
     }
     context.switchToHttp().getRequest().user = user;

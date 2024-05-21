@@ -12,9 +12,7 @@ import { Account } from './entities/account.entity';
 import { v4 as uuid } from 'uuid';
 import { UpdatePasswordDto } from './dto/updatePassword-dto';
 import * as bcrypt from 'bcrypt';
-import { RefreshToken } from '../auth/entities/accessToken.entity';
 import { AuthService } from '../auth/auth.service';
-import { AuthToken } from '../../internalTypes/Auth/authToken';
 import {
   ErrorCodes,
   ErrorPayloadObject,
@@ -91,7 +89,7 @@ export class UserService {
       throw new HttpException(
         {
           message: 'Passwords do not match',
-          eCode: ErrorCodes.BadData,
+          code: ErrorCodes.BadData,
         } as ErrorPayloadObject,
         HttpStatus.UNAUTHORIZED,
       );
@@ -112,7 +110,7 @@ export class UserService {
       ...data,
       user: undefined,
       activationCode: uuid(),
-      password: await this.hashPwd(data.password),
+      password: data.password ? await this.hashPwd(data.password) : null,
     });
     const newPersonalData = new PersonalData({
       ...data.personalData,
@@ -149,7 +147,8 @@ export class UserService {
     newAccount.save();
     newPersonalData.save();
 
-    const accessEntity = new RefreshToken();
+    // TODO Shuldnt be here
+    /*const accessEntity = new RefreshToken();
 
     const [accessToken, refreshToken] = await this.authService.createTokens(
       newAccount.email,
@@ -160,7 +159,7 @@ export class UserService {
     await this.authService.remOldRefreshTokens(await newUser.tokens);
     accessEntity.deviceId = await this.authService.hashData(refreshToken);
     accessEntity.user = Promise.resolve(newUser);
-    accessEntity.save();
+    accessEntity.save();*/
 
     /*await this.mailer.sendsMail({
       to: newAccount.email,
@@ -174,11 +173,7 @@ export class UserService {
 
     return {
       code: ResponseCode.ProcessedCorrect,
-      payload: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      } as AuthToken,
-    } as ResponseObject<AuthToken>;
+    } as ResponseObject;
   }
 
   /**
@@ -189,6 +184,8 @@ export class UserService {
    */
   async updatePassword(updatePasswordData: UpdatePasswordDto, user: User) {
     const userAccountEntity = await user.account;
+    if (!userAccountEntity.password)
+      throw new BadRequestException('Bad operation on account');
     await this.comparePassword(
       updatePasswordData.oldPassword,
       userAccountEntity.password,
@@ -217,7 +214,6 @@ export class UserService {
 
   async checkIfUserExist(userIdentifier: string) {
     const user = await this.findOne(userIdentifier);
-    console.log(user);
     if (user)
       throw new HttpException('Given user already exist', HttpStatus.CONFLICT);
     return {
