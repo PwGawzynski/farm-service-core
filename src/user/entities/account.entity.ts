@@ -31,9 +31,10 @@ export class Account extends BaseEntity {
 
   @Column({
     length: 200,
-    nullable: false,
+    nullable: true,
+    type: 'varchar',
   })
-  password: string;
+  password: string | null;
 
   @Column({
     type: 'boolean',
