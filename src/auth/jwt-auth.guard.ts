@@ -33,7 +33,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw new HttpException(
         {
           message: 'Account is not activated or not exist',
-          code: ErrorCodes.AccountNotActiveOrNotExist,
+          eCode: ErrorCodes.AccountNotActiveOrNotExist,
         } as ErrorPayloadObject,
         HttpStatus.UNAUTHORIZED,
       );
