@@ -20,6 +20,8 @@ import { Order } from '../../order/entities/order.entity';
 import { Task } from '../../task/entities/task.entity';
 import { Activity } from '../../activities/entities/activity.entity';
 import { Invoice } from '../../invoice/entities/invoice.entity';
+import { InvalidRequestCodes } from '../../../FarmServiceApiTypes/InvalidRequestCodes';
+import { ErrorPayloadObject } from '../../../FarmServiceApiTypes/Respnse/errorPayloadObject';
 
 @Entity()
 export class Company extends BaseEntity {
@@ -83,7 +85,10 @@ export class Company extends BaseEntity {
   @OneToMany(() => Invoice, (invoice) => invoice.company, { nullable: true })
   invoices: Promise<Invoice[] | null>;
 
-  async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
+  async _shouldNotExist<T extends keyof this>(
+    key: T,
+    errorCode: InvalidRequestCodes,
+  ) {
     if (
       !(
         typeof this[key] !== 'string' ||
@@ -98,6 +103,10 @@ export class Company extends BaseEntity {
       },
     });
     console.log((await exist?.owner)?.id, 'shouldNot', key, this[key]);
-    if (exist) throw new ConflictException(conflictMsg);
+    if (exist)
+      throw new ConflictException({
+        message: `Company with ${key as string} is already in use`,
+        code: errorCode,
+      } as ErrorPayloadObject);
   }
 }
