@@ -21,6 +21,8 @@ import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
 import { Client } from '../clients/entities/client.entity';
 import { UpdateFieldDto } from './dto/update-field.dto';
 import { Equal } from 'typeorm';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 /*const proj4 = require('proj4')*/ type DataObject = {
   type: 'text' | 'cdata' | string;
@@ -110,7 +112,7 @@ export class FieldService {
   private async _prepareResponse(filed: Field, filedAddress: FieldAddress) {
     // filed.address = undefined;
     return {
-      code: ResponseCode.ProcessedWithoutConfirmationWaiting,
+      code: ResponseCode.AssumedOk,
       payload: await this.prepareResponseDto(filed, filedAddress),
     } as ResponseObject<FieldResponseDto>;
   }
@@ -153,12 +155,18 @@ export class FieldService {
 
   private async _validateBase(user: User, client: Client | undefined) {
     if (user.role == UserRole.Owner && !client)
-      throw new ConflictException('Cannot create field without client data');
+      throw new ConflictException({
+        message: 'Cannot create field without client data',
+        code: InvalidRequestCodes.field_noClientData,
+      } as ErrorPayloadObject);
     else if (user.role == UserRole.Owner && client) {
       const clients = await (await user.company)?.clients;
       const clientExists = clients?.find((c) => c.id === client?.id);
       if (!clientExists)
-        throw new ConflictException('Cannot find client within yours clients');
+        throw new ConflictException({
+          message: 'Cannot create field for client that does not exist',
+          code: InvalidRequestCodes.field_clientNotExist,
+        } as ErrorPayloadObject);
     }
   }
 
@@ -200,7 +208,11 @@ export class FieldService {
     const field = await Field.findOne({
       where: { polishSystemId: Equal(PLid) },
     });
-    if (!field) throw new NotFoundException('Cannot find field with given id');
+    if (!field)
+      throw new NotFoundException({
+        message: 'Cannot find field with given id',
+        code: InvalidRequestCodes.field_fieldNotExist,
+      } as ErrorPayloadObject);
     return this._prepareResponse(field, await field.address);
   }
 
@@ -208,30 +220,25 @@ export class FieldService {
     const field = await Field.findOne({
       where: { id: Equal(id) },
     });
-    if (!field) throw new NotFoundException('Cannot find field with given id');
+    if (!field)
+      throw new NotFoundException({
+        message: 'Cannot find field with given id',
+        code: InvalidRequestCodes.field_fieldNotExist,
+      } as ErrorPayloadObject);
     return this._prepareResponse(field, await field.address);
   }
 
-  /*async getAllFields(company: Company, orderId: string) {
-    const order = (await company.orders).find((o) => o.id === orderId);
-    if (!order) {
-      throw new ConflictException('Given order does not exist in your company');
-    }
-    return {
-      code: ResponseCode.ProcessedCorrect,
-      payload: await Promise.all(
-        (
-          await order.fields
-        ).map(
-          async (field) =>
-            new FieldResponseDto({
-              ...field,
-              address: new FieldAddressResponseDto(await field.address),
-            }),
-        ),
-      ),
-    } as ResponseObject<FieldResponseDto[]>;
-  }*/
+  private async getOneAsEntity(id: string) {
+    const field = await Field.findOne({
+      where: { id: Equal(id) },
+    });
+    if (!field)
+      throw new NotFoundException({
+        message: 'Cannot find field with given id',
+        code: InvalidRequestCodes.field_fieldNotExist,
+      } as ErrorPayloadObject);
+    return field;
+  }
 
   async getDataFromXLM(xlm: GetDataFromXLMDto) {
     const data = await this._getFiledArea(xlm.data);
@@ -242,10 +249,7 @@ export class FieldService {
   }
 
   async delete(id: string) {
-    const field = await Field.findOne({
-      where: { id: Equal(id) },
-    });
-    if (!field) throw new NotFoundException('Cannot find field with given id');
+    const field = await this.getOneAsEntity(id);
     field.remove();
     return {
       code: ResponseCode.ProcessedCorrect,
@@ -253,13 +257,14 @@ export class FieldService {
   }
 
   async getAllByClient(id: string) {
-    if (id === undefined)
-      throw new NotFoundException('Cannot find client with given id');
     const client = await Client.findOne({
       where: { id: Equal(id) },
     });
     if (!client)
-      throw new NotFoundException('Cannot find client with given id');
+      throw new NotFoundException({
+        message: 'Cannot find client with given id',
+        code: InvalidRequestCodes.field_noClientData,
+      } as ErrorPayloadObject);
     const fields = await (await client.user).ownedFields;
     return {
       code: ResponseCode.ProcessedCorrect,
