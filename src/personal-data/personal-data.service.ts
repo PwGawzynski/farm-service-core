@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdatePersonalDataDto } from './dto/update-personal-data.dto';
 import { PersonalData } from './entities/personalData.entity';
 import {
@@ -7,6 +7,8 @@ import {
 } from '../../FarmServiceApiTypes/Respnse/responseGeneric';
 import { PersonalDataResponseDto } from './dto/response/personalData-response.dto';
 import { Equal } from 'typeorm';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
 
 @Injectable()
 export class PersonalDataService {
@@ -16,18 +18,20 @@ export class PersonalDataService {
       where: { id: Equal(id) },
     });
     if (!oldPersonalData)
-      throw new BadRequestException('Cannot Find personal data');
+      throw new NotFoundException({
+        code: InvalidRequestCodes.personalData_notFound,
+        message: 'Personal data not found',
+      } as ErrorPayloadObject);
 
     const newPersonalData = new PersonalData({
       name,
       surname,
       phoneNumber: phoneNumber,
     });
-    console.log(phoneNumber, oldPersonalData.phoneNumber);
     if (oldPersonalData.phoneNumber !== phoneNumber)
       await newPersonalData._shouldNotExist(
         'phoneNumber',
-        'Phone number is already in use',
+        InvalidRequestCodes.personalData_phoneTaken,
       );
     // noinspection ES6MissingAwait
     PersonalData.createQueryBuilder()
