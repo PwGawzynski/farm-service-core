@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Company } from '../company/entities/company.entity';
 import { Order } from './entities/order.entity';
@@ -22,6 +26,7 @@ import { AccountOrderDto } from './dto/account-order.dto';
 import { AccountingResponseDto } from './dto/response/accounting.response.dto';
 import { Task } from '../task/entities/task.entity';
 import { Invoice } from '../invoice/entities/invoice.entity';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class OrderService {
@@ -70,16 +75,20 @@ export class OrderService {
       relations: ['tasks', 'prices', 'company'],
     });
     if (!order || (await order.company).id !== company.id) {
-      throw new ConflictException(
-        'Order not found or does not belong to your company',
-      );
+      throw new NotFoundException({
+        code: InvalidRequestCodes.order_notFound,
+        message: 'Order not found or does not belong to your company',
+      });
     }
     return order;
   }
 
   private canAccountOrder(tasks: Task[]): boolean | void {
     if (tasks?.some((t) => !t.isDone))
-      throw new ConflictException('All tasks must be done');
+      throw new ConflictException({
+        code: InvalidRequestCodes.order_unclosedTasks,
+        message: 'You cannot account order with unclosed tasks',
+      });
     return true;
   }
 
@@ -100,11 +109,16 @@ export class OrderService {
     company: Company,
   ): Promise<Order | void> {
     // due to orderId is optional in entity
-    if (!order.id) throw new ConflictException('Order ID is required');
+    if (!order.id)
+      throw new ConflictException({
+        code: InvalidRequestCodes.order_idRequired,
+        message: 'Order id is required',
+      });
     if ((await order.company).id !== company.id)
-      throw new ConflictException(
-        'You cannot manage order which not belonging to yours company',
-      );
+      throw new ConflictException({
+        code: InvalidRequestCodes.order_notInCompany,
+        message: 'Order does not belong to your company',
+      });
   }
 
   /**
@@ -114,7 +128,10 @@ export class OrderService {
   async create(createOrderDto: CreateOrderDto, company: Company) {
     const { client } = createOrderDto;
     if (company.id !== (await client.isClientOf)?.id)
-      throw new Error('You dont have such client');
+      throw new ConflictException({
+        code: InvalidRequestCodes.order_clientNotInCompany,
+        message: 'Client does not belong to your company',
+      });
     const newOrder = new Order({
       ...createOrderDto,
       id: uuid(),
