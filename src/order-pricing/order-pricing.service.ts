@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { TaskType } from '../../FarmServiceApiTypes/Task/Enums';
 import { OrderPricing } from './entity/order-pricing.entity';
 import { Equal } from 'typeorm';
 import { OrderPricingResponseDto } from './dto/response/order-pricing-response.dto';
 import { OrderPricingConstants } from '../../FarmServiceApiTypes/OrderPricing/Constants';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class OrderPricingService {
@@ -23,13 +25,19 @@ export class OrderPricingService {
 
   private validate(price: number, tax: number) {
     if (price < OrderPricingConstants.MIN_PRICE) {
-      throw new Error('Price is too low');
+      throw new ConflictException({
+        message: 'Price is too low',
+        code: InvalidRequestCodes.orderPricing_priceTooLow,
+      } as ErrorPayloadObject);
     }
     if (
       tax < OrderPricingConstants.MIN_TAX ||
       tax > OrderPricingConstants.MAX_TAX
     ) {
-      throw new Error('Tax is out of range');
+      throw new ConflictException({
+        message: 'Tax is out of range',
+        code: InvalidRequestCodes.orderPricing_taxOutOfRange,
+      } as ErrorPayloadObject);
     }
   }
 
