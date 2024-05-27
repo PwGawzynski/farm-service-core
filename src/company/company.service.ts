@@ -14,6 +14,8 @@ import { ClientsResponseDto } from '../clients/dto/response/client.response.dto'
 import { UserResponseDto } from '../user/dto/response/user-response.dto';
 import { PersonalDataResponseDto } from '../personal-data/dto/response/personalData-response.dto';
 import { Equal } from 'typeorm';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class CompanyService {
@@ -33,14 +35,24 @@ export class CompanyService {
         },
       },
     });
-    if (exist) throw new ConflictException('User already has company');
-    await company._shouldNotExist('email', 'Email is already in use');
-    await company._shouldNotExist('name', 'Name is already in use');
+    if (exist)
+      throw new ConflictException({
+        message: 'Company already exists',
+        code: InvalidRequestCodes.company_alreadyExists,
+      } as ErrorPayloadObject);
+    await company._shouldNotExist(
+      'email',
+      InvalidRequestCodes.company_emailTaken,
+    );
+    await company._shouldNotExist(
+      'name',
+      InvalidRequestCodes.company_nameTaken,
+    );
     await company._shouldNotExist(
       'phoneNumber',
-      'PhoneNumber is already in use',
+      InvalidRequestCodes.company_phoneTaken,
     );
-    await company._shouldNotExist('NIP', 'NIP is already in use');
+    await company._shouldNotExist('NIP', InvalidRequestCodes.company_NIPTaken);
     company.save();
 
     return {
