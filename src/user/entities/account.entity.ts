@@ -10,6 +10,8 @@ import {
 import { User } from './user.entity';
 import { ConflictException } from '@nestjs/common';
 import { Theme } from '../../../FarmServiceApiTypes/Account/Constants';
+import { InvalidRequestCodes } from '../../../FarmServiceApiTypes/InvalidRequestCodes';
+import { ErrorPayloadObject } from '../../../FarmServiceApiTypes/Respnse/errorPayloadObject';
 /**
  * Class represents account data in db
  */
@@ -73,12 +75,19 @@ export class Account extends BaseEntity {
   })
   user: Promise<User | null>;
 
-  async _shouldNotExist<T extends keyof this>(key: T, conflictMsg: string) {
+  async _shouldNotExist<T extends keyof this>(
+    key: T,
+    errorCode: InvalidRequestCodes,
+  ) {
     const exist = await Account.findOne({
       where: {
         [key]: Equal(this[key]),
       },
     });
-    if (exist) throw new ConflictException(conflictMsg);
+    if (exist)
+      throw new ConflictException({
+        code: errorCode,
+        message: `Account with ${key as string}  already exist`,
+      } as ErrorPayloadObject);
   }
 }
