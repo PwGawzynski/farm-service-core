@@ -15,6 +15,7 @@ import {
   ResponseCode,
   ResponseObject,
 } from '../FarmServiceApiTypes/Respnse/responseGeneric';
+import { doesntContains } from '../Helpers/common';
 
 /**
  * Global exception filter, used to filter any exception occurred in app, and send back user-friendly response witch only save for app information
@@ -22,6 +23,28 @@ import {
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+
+  private _validateErrorResponse(response: any) {
+    if (!response?.payload?.code) {
+      console.error(
+        '\x1b[41m',
+        'BAD_RESPONSE_ERROR',
+        '\x1b[0m',
+        '\x1b[31m',
+        'Violation of error return rules, response is string',
+        '\x1b[0m',
+      );
+    } else if (doesntContains(response.payload.code, ErrorCodes)) {
+      console.error(
+        '\x1b[41m',
+        '!!!_CODE_RESERVATION_ERROR_!!!',
+        '\x1b[0m',
+        '\x1b[31m',
+        'This is global exception code, please use another code for your error',
+        '\x1b[0m',
+      );
+    }
+  }
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
@@ -41,23 +64,33 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const httpStatus = exception.getStatus();
       const response = exception.getResponse() as ErrorPayloadObject;
-      const message =
-        typeof response === 'string' ? response : response.message;
-      const responseBody = {
-        code: ResponseCode.ErrorOccurred,
-        payload: {
-          message,
-          eCode: response?.eCode,
-        },
-      } as ResponseObject<ErrorPayloadObject>;
+      this._validateErrorResponse(response);
+      let responseBody = {} as ResponseObject<ErrorPayloadObject>;
+      if (!response?.code && typeof response.message === 'string')
+        responseBody = {
+          code: ResponseCode.Error,
+          payload: {
+            code: ErrorCodes.UnknownServerError,
+            message: response.message,
+          },
+        };
+      else {
+        responseBody = {
+          code: ResponseCode.Error,
+          payload: {
+            code: response.code,
+            message: response.message,
+          },
+        };
+      }
       httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
     } else
       httpAdapter.reply(
         ctx.getResponse(),
         {
-          code: ResponseCode.ErrorOccurred,
+          code: ResponseCode.Error,
           payload: {
-            eCode: ErrorCodes.UnknownServerError,
+            code: ErrorCodes.UnknownServerError,
           },
         } as ResponseObject<ErrorPayloadObject>,
         HttpStatus.INTERNAL_SERVER_ERROR,
