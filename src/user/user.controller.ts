@@ -14,6 +14,7 @@ import { UpdatePasswordDto } from './dto/updatePassword-dto';
 import { User } from './entities/user.entity';
 import { GetUser } from '../../decorators/user.decorator';
 import { AllRoles, Public } from '../../decorators/auth.decorators';
+import { UpdateAccountSettingsDto } from './dto/update-account-settings.dto';
 
 @Controller('user')
 export class UserController {
@@ -78,5 +79,14 @@ export class UserController {
   @AllRoles()
   async me(@GetUser() user: User) {
     return this.userService.me(user);
+  }
+
+  @Put('account-settings')
+  @AllRoles()
+  async changeAccountSettings(
+    @GetUser() user: User,
+    @Body() data: UpdateAccountSettingsDto,
+  ) {
+    return this.userService.changeAccountSettings(user, data);
   }
 }
