@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/updatePassword-dto';
@@ -57,11 +48,11 @@ export class UserController {
    * @param user -- req causer ( userEntity from db )
    * @return ResponseObject with ResponseCode.ProcessedCorrect if operation went correct
    */
-  @Delete()
+  /*@Delete()
   @AllRoles()
   async deleteAccount(@GetUser() user: User) {
     return this.userService.deleteAccount(user);
-  }
+  }*/
 
   @Get('exist/:userIdentifier')
   @AllRoles()

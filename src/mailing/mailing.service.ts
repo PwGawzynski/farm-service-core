@@ -99,7 +99,7 @@ export class MailingService {
         );
       });
     return {
-      code: ResponseCode.ProcessedWithoutConfirmationWaiting,
+      code: ResponseCode.AssumedOk,
     } as ResponseObject;
   }
 }

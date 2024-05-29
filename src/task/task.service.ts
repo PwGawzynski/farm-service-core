@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CrateTaskCollection, CreateTaskDto } from './dto/create-task.dto';
 import { Company } from '../company/entities/company.entity';
 import { Task } from './entities/task.entity';
@@ -24,6 +28,8 @@ import { TaskSessionEntityDto } from '../task-session/dto/TaskSessionEntity.dto'
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../../FarmServiceApiTypes/Activity/Enums';
 import { OrderStatus } from '../../FarmServiceApiTypes/Order/Enums';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class TaskService {
@@ -89,7 +95,11 @@ export class TaskService {
   async findAndValidate(taskId: string, worker: Worker) {
     const task = await Task.findOne({ where: { id: Equal(taskId) } });
     const exist = (await worker.tasks)?.find((t) => t.id === taskId);
-    if (!exist || !task) throw new ConflictException('Task not found');
+    if (!exist || !task)
+      throw new NotFoundException({
+        message: 'Task not found',
+        code: InvalidRequestCodes.task_notFound,
+      } as ErrorPayloadObject);
     return task;
   }
 
@@ -108,24 +118,30 @@ export class TaskService {
       },
     });
     if (alreadyExist)
-      throw new ConflictException(`You can't create two the same tasks`);
+      throw new ConflictException({
+        message: `You can't create two the same tasks`,
+        code: InvalidRequestCodes.task_taskAlreadyExist,
+      } as ErrorPayloadObject);
     const isWorkerOf = (await worker.company).id === company.id;
     const isOrderOf = (await order.company).id === company.id;
     const fieldOwner = await await (await field.owner).client;
     const isFieldOfCompanyClient =
       (await fieldOwner?.isClientOf)?.id === company.id;
     if (!isWorkerOf)
-      throw new ConflictException(
-        'Given worker is not a worker of your company',
-      );
+      throw new ConflictException({
+        message: 'Given worker is not a worker of your company',
+        code: InvalidRequestCodes.task_workerNotInCompany,
+      } as ErrorPayloadObject);
     if (!isOrderOf)
-      throw new ConflictException(
-        `Given order[${order.id}] does not exist in your company`,
-      );
+      throw new ConflictException({
+        code: InvalidRequestCodes.task_orderNotInCompany,
+        message: 'Given order does not belong to your company',
+      } as ErrorPayloadObject);
     if (!isFieldOfCompanyClient)
-      throw new ConflictException(
-        `Field owner[${fieldOwner?.id}] is not a client of your company`,
-      );
+      throw new ConflictException({
+        message: `Given field[${field.nameLabel}] does not belong to your company`,
+        code: InvalidRequestCodes.task_fieldNotInCompany,
+      } as ErrorPayloadObject);
   }
 
   private async onGetByCompanyValidate(
@@ -135,10 +151,17 @@ export class TaskService {
     const order = await Order.findOne({
       where: { id: Equal(orderId) },
     });
-    if (!order) throw new ConflictException('Order not found');
+    if (!order)
+      throw new NotFoundException({
+        message: 'Order not found',
+        code: InvalidRequestCodes.order_notFound,
+      } as ErrorPayloadObject);
     const isOrderOfCompany = (await order.company).id === company.id;
     if (!isOrderOfCompany)
-      throw new ConflictException('Order not found in your company');
+      throw new ConflictException({
+        message: 'Order not found in your company',
+        code: InvalidRequestCodes.order_notInCompany,
+      } as ErrorPayloadObject);
     return order;
   }
 
@@ -146,30 +169,43 @@ export class TaskService {
     const task = await Task.findOne({
       where: { id: Equal(id) },
     });
-    if (!task) throw new ConflictException('Task not found');
+    if (!task)
+      throw new NotFoundException({
+        message: 'Task not found',
+        code: InvalidRequestCodes.task_notFound,
+      } as ErrorPayloadObject);
     const isTaskOfCompany = (await task.company).id === company.id;
     if (!isTaskOfCompany)
-      throw new ConflictException('Task not found in your company');
+      throw new ConflictException({
+        message: 'Task not found in your company',
+        code: InvalidRequestCodes.task_notInCompany,
+      } as ErrorPayloadObject);
     return task;
   }
 
   private validateSessionData(sessionData: TaskSessionEntityDto) {
     if (!sessionData.workerLatitude || !sessionData.workerLongitude)
-      throw new ConflictException(
-        'Worker location data is required perform this action',
-      );
+      throw new ConflictException({
+        message: 'Worker location is required',
+        code: InvalidRequestCodes.task_workerLocationRequired,
+      } as ErrorPayloadObject);
   }
 
   private taskOpenedUnfinished(task: Task) {
     if (!task.openedAt || task.closedAt || task.isDone)
-      throw new ConflictException(
-        "Cannot close task with hasn't been opened, or is already done",
-      );
+      throw new ConflictException({
+        message:
+          "Cannot close task with hasn't been opened, or is already done",
+        code: InvalidRequestCodes.task_taskNotOpened,
+      } as ErrorPayloadObject);
   }
 
   private async validateOrderStatus(order: Order, expectedStatus: OrderStatus) {
     if (order.status !== expectedStatus)
-      throw new ConflictException('Order is not in correct status');
+      throw new ConflictException({
+        code: InvalidRequestCodes.order_invalidStatus,
+        message: 'Order is not in correct status',
+      } as ErrorPayloadObject);
   }
 
   /**
@@ -243,9 +279,10 @@ export class TaskService {
   ) {
     const task = await this.findAndValidate(taskId, worker);
     if (task.openedAt || task.isDone || task.closedAt)
-      throw new ConflictException(
-        'Cannot start task is already opened, or is already done',
-      );
+      throw new ConflictException({
+        message: 'Task already started or is done',
+        code: InvalidRequestCodes.task_taskAlreadyStarted,
+      } as ErrorPayloadObject);
     this.validateSessionData(sessionData);
     const openedSession = await this.TaskSessionService.open(task, sessionData);
     await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
@@ -298,7 +335,11 @@ export class TaskService {
 
   async closeByOwner(taskId: string, company: Company) {
     const task = (await company.tasks)?.find((t) => t.id === taskId);
-    if (!task) throw new ConflictException('Task not found');
+    if (!task)
+      throw new NotFoundException({
+        message: 'Task not found',
+        code: InvalidRequestCodes.task_notFound,
+      } as ErrorPayloadObject);
     await this.validateOrderStatus(await task.order, OrderStatus.TaskAssigned);
     this.taskOpenedUnfinished(task);
     const updatedSession = await this.TaskSessionService.closeByOwner(task);

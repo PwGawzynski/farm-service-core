@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { ConflictException } from '@nestjs/common';
+import { ErrorPayloadObject } from '../../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Entity()
 export class PersonalData extends BaseEntity {
@@ -44,19 +46,23 @@ export class PersonalData extends BaseEntity {
   /**
    * Checks if entity already exist in db
    * @param key one of PersonalData properties [keyof User]
+   * @param errorCode InvalidRequestCodes code
    * @param conflictMsg message sent when conflict
    * @throws ConflictException when exist
    */
   async _shouldNotExist<T extends keyof PersonalData>(
     key: T,
-    conflictMsg: string,
+    errorCode: InvalidRequestCodes,
   ) {
     const exist = await PersonalData.findOne({
       where: {
         [key]: Equal(this[key]),
       },
     });
-    console.log(exist, this[key]);
-    if (exist) throw new ConflictException(conflictMsg);
+    if (exist)
+      throw new ConflictException({
+        code: errorCode,
+        message: `Account with ${key as string}  already exist`,
+      } as ErrorPayloadObject);
   }
 }

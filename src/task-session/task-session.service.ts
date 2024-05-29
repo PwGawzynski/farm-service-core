@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { TaskSession } from './entities/task-session.entity';
 import { Equal, IsNull } from 'typeorm';
 import { TaskSessionResponseDto } from './dto/response/task-session-response.dto';
@@ -6,6 +10,8 @@ import { Task } from '../task/entities/task.entity';
 import { TaskSessionEntityDto } from './dto/TaskSessionEntity.dto';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ActivitiesService } from '../activities/activities.service';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class TaskSessionService {
@@ -19,9 +25,10 @@ export class TaskSessionService {
       },
     });
     if (existOpenedSession) {
-      throw new Error(
-        'Another task is already opened, you have to close it first',
-      );
+      throw new ConflictException({
+        message: 'Another task is already opened, you have to close it first',
+        code: InvalidRequestCodes.taskSession_anotherTaskOpened,
+      } as ErrorPayloadObject);
     }
   }
 
@@ -77,6 +84,9 @@ export class TaskSessionService {
       session.save();
       return session;
     }
-    throw new BadRequestException('No open session found for this task');
+    throw new NotFoundException({
+      message: 'Task session not found',
+      code: InvalidRequestCodes.taskSession_notFound,
+    } as ErrorPayloadObject);
   }
 }

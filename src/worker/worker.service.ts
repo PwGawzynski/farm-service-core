@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  RequestTimeoutException,
+} from '@nestjs/common';
 import { CreateWorkerDto } from './dto/create-worker.dto';
 import { Company } from '../company/entities/company.entity';
 import { Worker } from './entities/worker.entity';
@@ -18,6 +22,8 @@ import { UpdateWorkerStatusOrPositionDto } from './dto/update-worker.dto';
 import { Equal } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { Position, Status } from '../../FarmServiceApiTypes/Worker/Enums';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class WorkerService {
@@ -56,7 +62,11 @@ export class WorkerService {
     const exist = await Worker.findOne({
       where: { user: { id: Equal(user.id) } },
     });
-    if (exist) throw new Error('Worker already exist');
+    if (exist)
+      throw new ConflictException({
+        code: InvalidRequestCodes.worker_alreadyExist,
+        message: 'Worker already has been assigned to company',
+      } as ErrorPayloadObject);
     worker.save();
     return {
       code: ResponseCode.ProcessedCorrect,
@@ -81,7 +91,10 @@ export class WorkerService {
   async info(user: User) {
     const timeout$ = interval(60000).pipe(
       concatMap(() => {
-        throw Error('Timeout');
+        throw new RequestTimeoutException({
+          code: InvalidRequestCodes.worker_infoTimeout,
+          message: 'Timeout',
+        } as ErrorPayloadObject);
       }),
     );
     return interval(2000).pipe(
@@ -96,7 +109,7 @@ export class WorkerService {
           } as ResponseObject<WorkerResponseDto>);
         }
         return JSON.stringify({
-          code: ResponseCode.ErrorOccurred,
+          code: ResponseCode.Error,
         } as ResponseObject<WorkerResponseDto>);
       }),
       filter(

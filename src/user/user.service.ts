@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   forwardRef,
   HttpException,
   HttpStatus,
@@ -13,10 +14,7 @@ import { v4 as uuid } from 'uuid';
 import { UpdatePasswordDto } from './dto/updatePassword-dto';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth/auth.service';
-import {
-  ErrorCodes,
-  ErrorPayloadObject,
-} from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
 import {
   ResponseCode,
   ResponseObject,
@@ -32,6 +30,7 @@ import { PersonalDataResponseDto } from '../personal-data/dto/response/personalD
 import { CompanyResponseDto } from '../company/dto/response/company.response.dto';
 import { Equal } from 'typeorm';
 import { UpdateAccountSettingsDto } from './dto/update-account-settings.dto';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class UserService {
@@ -90,7 +89,7 @@ export class UserService {
       throw new HttpException(
         {
           message: 'Passwords do not match',
-          eCode: ErrorCodes.BadData,
+          code: InvalidRequestCodes.account_passwordsDoNotMatch,
         } as ErrorPayloadObject,
         HttpStatus.UNAUTHORIZED,
       );
@@ -102,10 +101,6 @@ export class UserService {
    * @return ResponseObject with proper code
    */
   async register(data: CreateUserDto) {
-    // TODO -> powoduje blad bo z tego korzysta tworzenie klienta i wtedy jest client
-    /*if (data.role === UserRole.Client)
-      throw new UnauthorizedException("You don't have permission to do this");*/
-
     const newUser = new User({ ...data });
     const newAccount = new Account({
       ...data,
@@ -125,11 +120,11 @@ export class UserService {
 
     await newAccount._shouldNotExist(
       'email',
-      'User with given emil is already registered',
+      InvalidRequestCodes.account_emailTaken,
     );
     await newPersonalData._shouldNotExist(
       'phoneNumber',
-      'Phone number is already registered',
+      InvalidRequestCodes.personalData_phoneTaken,
     );
 
     await newAddress.save();
@@ -148,20 +143,7 @@ export class UserService {
     newAccount.save();
     newPersonalData.save();
 
-    // TODO Shuldnt be here
-    /*const accessEntity = new RefreshToken();
-
-    const [accessToken, refreshToken] = await this.authService.createTokens(
-      newAccount.email,
-      newUser.id,
-      accessEntity.id,
-    );
-
-    await this.authService.remOldRefreshTokens(await newUser.tokens);
-    accessEntity.deviceId = await this.authService.hashData(refreshToken);
-    accessEntity.user = Promise.resolve(newUser);
-    accessEntity.save();*/
-
+    //TODO pre release implement it
     /*await this.mailer.sendsMail({
       to: newAccount.email,
       template: 'activateNewAccount',
@@ -186,7 +168,10 @@ export class UserService {
   async updatePassword(updatePasswordData: UpdatePasswordDto, user: User) {
     const userAccountEntity = await user.account;
     if (!userAccountEntity.password)
-      throw new BadRequestException('Bad operation on account');
+      throw new BadRequestException({
+        message: 'Bad operation on account',
+        code: InvalidRequestCodes.account_badOperationOnAccount,
+      } as ErrorPayloadObject);
     await this.comparePassword(
       updatePasswordData.oldPassword,
       userAccountEntity.password,
@@ -205,18 +190,21 @@ export class UserService {
    * @param user -- userEntity
    * @return ResponseObject with proper code
    */
-  async deleteAccount(user: User) {
+  /*async deleteAccount(user: User) {
     (await user.account).remove();
     user.remove();
     return {
-      code: ResponseCode.ProcessedWithoutConfirmationWaiting,
+      code: ResponseCode.AssumedOk,
     } as ResponseObject;
-  }
+  }*/
 
   async checkIfUserExist(userIdentifier: string) {
     const user = await this.findOne(userIdentifier);
     if (user)
-      throw new HttpException('Given user already exist', HttpStatus.CONFLICT);
+      throw new ConflictException({
+        message: 'User already exist',
+        code: InvalidRequestCodes.user_userAlreadyExist,
+      } as ErrorPayloadObject);
     return {
       code: ResponseCode.ProcessedCorrect,
       payload: true,
@@ -229,11 +217,15 @@ export class UserService {
         activationCode: Equal(code),
       },
     });
-    if (!account) throw new BadRequestException('BAD_CODE');
+    if (!account)
+      throw new BadRequestException({
+        message: 'Account not found',
+        code: InvalidRequestCodes.account_badActivationCode,
+      } as ErrorPayloadObject);
     account.isActivated = true;
     account.save();
     return {
-      code: ResponseCode.ProcessedWithoutConfirmationWaiting,
+      code: ResponseCode.AssumedOk,
     } as ResponseObject;
   }
 
@@ -260,11 +252,14 @@ export class UserService {
   }
 
   async resetPassword(email: string) {
-    if (!email) throw new BadRequestException('BAD_EMAIL');
+    if (!email)
+      throw new BadRequestException({
+        message: 'Email is required',
+        code: InvalidRequestCodes.account_emailRequired,
+      } as ErrorPayloadObject);
     const user = await User.findOne({
       where: { account: { email: Equal(email) } },
     });
-    console.log(user, email);
     if (user) {
       const resetToken = crypto.randomBytes(128).toString('hex');
       const hashedToken = await bcrypt.hash(resetToken, 10);

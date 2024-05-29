@@ -1,10 +1,10 @@
 import {
-  BadRequestException,
   forwardRef,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
+  InternalServerErrorException,
+  PreconditionFailedException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserDataDto } from './dto/user-data.dto';
@@ -28,6 +28,8 @@ import { Equal } from 'typeorm';
 import { OAuth2Client } from 'google-auth-library';
 import { GoogleAuthResponseI } from '../../FarmServiceApiTypes/User/Responses';
 import { Account } from '../user/entities/account.entity';
+import { ErrorPayloadObject } from '../../FarmServiceApiTypes/Respnse/errorPayloadObject';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class AuthService {
@@ -126,15 +128,25 @@ export class AuthService {
    */
   async checkUserCredentials(userData: UserDataDto): Promise<User> {
     const user = await this.userService.findOne(userData.email);
-    if (!user) throw new HttpException('Unauthorised', HttpStatus.UNAUTHORIZED);
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     const credentials = await user.account;
     if (!credentials.password)
-      throw new HttpException('Unauthorised', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     return bcrypt
       .compare(userData.password, credentials.password)
       .then((result) => {
         if (result) return user;
-        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+        throw new UnauthorizedException({
+          message: 'Unauthorized',
+          code: InvalidRequestCodes.unauthorized,
+        } as ErrorPayloadObject);
       })
       .catch((e) => {
         throw e;
@@ -156,10 +168,10 @@ export class AuthService {
     });
     toRemove.forEach((token) => token.remove());
     if (tokens.length - toRemove.length > AuthService.maxRegisteredDevicesCount)
-      throw new HttpException(
-        'The maximum numbers of active devices has been Violated',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
   }
 
   /**
@@ -174,10 +186,7 @@ export class AuthService {
       .hash(data, 10)
       .then((hashed) => hashed)
       .catch(() => {
-        throw new HttpException(
-          'Some went wrong',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new InternalServerErrorException('Something went wrong');
       });
   }
 
@@ -260,9 +269,10 @@ export class AuthService {
     const validUser = await this.checkUserCredentials(user);
     const account = await validUser.account;
     if (!account.isActivated)
-      throw new BadRequestException(
-        'Account is not activated or does not exist',
-      );
+      throw new PreconditionFailedException({
+        message: 'Account is not activated',
+        code: InvalidRequestCodes.account_notActivated,
+      } as ErrorPayloadObject);
     const { accessToken, refreshToken } = await this.generateTokens(
       validUser,
       account,
@@ -289,15 +299,22 @@ export class AuthService {
    */
   async _validAndGet(req: Request) {
     if (!req.user)
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     const validUser = await this.userService.findOneById(req.user['userId']);
     if (!validUser)
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     const account = await validUser.account;
     if (!account.isActivated)
-      throw new BadRequestException(
-        'Account is not activated or does not exist',
-      );
+      throw new PreconditionFailedException({
+        message: 'Account is not activated',
+        code: InvalidRequestCodes.account_notActivated,
+      } as ErrorPayloadObject);
 
     const oldTokensEntity = await RefreshToken.find({
       where: {
@@ -305,7 +322,10 @@ export class AuthService {
       },
     });
     if (!oldTokensEntity.length)
-      throw new HttpException('Invalid Token', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.invalidToken,
+      } as ErrorPayloadObject);
     oldTokensEntity.forEach((token) => token.remove());
 
     return { validUser, account };
@@ -342,7 +362,8 @@ export class AuthService {
     await this._validAndGet(req);
     return {
       code: ResponseCode.ProcessedCorrect,
-    } as ResponseObject<string>;
+      payload: true,
+    } as ResponseObject<boolean>;
   }
 
   async googleLogin(idToken: string) {
@@ -356,9 +377,15 @@ export class AuthService {
     const email = payload && payload['email'];
     const aud = payload && payload['aud'];
     if (!aud || !audience.includes(aud))
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     if (!email)
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new UnauthorizedException({
+        message: 'Unauthorized',
+        code: InvalidRequestCodes.unauthorized,
+      } as ErrorPayloadObject);
     const user = await User.findOne({
       where: {
         account: {
@@ -376,9 +403,10 @@ export class AuthService {
     }
     const account = await user.account;
     if (!account.isActivated)
-      throw new BadRequestException(
-        'Account is not activated or does not exist',
-      );
+      throw new PreconditionFailedException({
+        message: 'Account is not activated',
+        code: InvalidRequestCodes.account_notActivated,
+      } as ErrorPayloadObject);
     const { accessToken, refreshToken } = await this.generateTokens(
       user,
       account,

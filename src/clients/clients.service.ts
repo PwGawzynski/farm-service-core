@@ -2,7 +2,6 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateClientDto, CreateUserAsClient } from './dto/create-client.dto';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../../FarmServiceApiTypes/User/Enums';
-import * as crypto from 'crypto';
 import { Client } from './entities/client.entity';
 import { User } from '../user/entities/user.entity';
 import { Company } from '../company/entities/company.entity';
@@ -26,11 +25,12 @@ import { ClientsCompany } from '../clients_company/entities/clients_company.enti
 import { Address } from '../address/entities/address.entity';
 import { Equal } from 'typeorm';
 import { AddressResponseDto } from '../address/dto/response/address.response.dto';
+import { InvalidRequestCodes } from '../../FarmServiceApiTypes/InvalidRequestCodes';
 
 @Injectable()
 export class ClientsService {
   constructor(
-    private readonly users: UserService,
+    private readonly user: UserService,
     private readonly clientsCompany: ClientsCompanyService,
     private readonly personalDataService: PersonalDataService,
     private readonly addressService: AddressService,
@@ -64,10 +64,9 @@ export class ClientsService {
   }
 
   async _createUser(user: CreateUserAsClient) {
-    const randomPwd = crypto.randomBytes(128).toString('hex');
-    await this.users.register({
+    await this.user.register({
       ...user,
-      password: randomPwd,
+      password: undefined,
       role: UserRole.Client,
     });
     const registeredUser = await User.findOne({
@@ -78,7 +77,10 @@ export class ClientsService {
       },
     });
     if (!registeredUser)
-      throw new InternalServerErrorException('Something went wrong');
+      throw new InternalServerErrorException({
+        message: 'Something went wrong while creating user',
+        code: InvalidRequestCodes.client_userNotCreated,
+      });
 
     return registeredUser;
   }
