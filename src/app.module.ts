@@ -28,23 +28,11 @@ import { TaskSessionService } from './task-session/task-session.service';
 import { ActivitiesModule } from './activities/activities.module';
 import { OrderPricingModule } from './order-pricing/order-pricing.module';
 import { InvoiceModule } from './invoice/invoice.module';
-
+import dataSource from '../db/ormconfig';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: +(process.env.DB_PORT || 3306),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      entities: ['dist/**/*.entity{.ts,.js}'],
-      synchronize: true,
-      bigNumberStrings: false,
-      logging: true,
-      autoLoadEntities: true,
-    }),
+    TypeOrmModule.forRoot(dataSource as any),
     MailerModule.forRoot({
       transport: 'smtps://user@domain.com:pass@smtp.domain.com',
       template: {

@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: farm_service_core
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    ports:
+      - "3306:3306" # Port 3306 jest eksponowany na hoście
+    volumes:
+      - db_data:/var/lib/mysql
+
+  nestjs:
+    build:
+      context: ./../../ # Ścieżka do katalogu z aplikacją NestJS
+      dockerfile: Dockerfile # Jeśli masz własny plik Dockerfile dla serwera NestJS
+    restart: always
+    depends_on:
+      - db # Kontener NestJS zależy od kontenera MySQL
+    ports:
+      - "3000:3000" # Port na którym działa serwer NestJS
+    environment:
+      MYSQL_HOST: db # Host MySQL, który będzie dostępny wewnątrz kontenera NestJS
+      MYSQL_USER: root # Użytkownik MySQL
+      MYSQL_PASSWORD: root # Hasło MySQL
+      MYSQL_DATABASE: farm_service_core # Nazwa bazy danych MySQL
+      MYSQL_PORT: 3306 # Port MySQL
+      MYSQL_TYPE: mysql # Typ bazy danych
+
+volumes:
+  db_data:
