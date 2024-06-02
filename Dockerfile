@@ -14,7 +14,7 @@ RUN /bin/bash -c "source app-env.sh"
 
 # Install the dependencies
 RUN npm install
-
+RUN export NODE_OPTIONS="--max-old-space-size=8192"
 # Copy the rest of the application code into the working directory
 COPY . .
 

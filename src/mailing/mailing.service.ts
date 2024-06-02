@@ -52,7 +52,6 @@ export class MailingService {
       });
     });
     // set up options object to work with Google api
-    console.log(accessToken, 'chuja');
     const config: Options = {
       service: 'gmail',
       auth: {

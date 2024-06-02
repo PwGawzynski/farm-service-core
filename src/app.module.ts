@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import * as process from 'process';
 import configuration from '../config/configuration';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
@@ -28,11 +27,13 @@ import { TaskSessionService } from './task-session/task-session.service';
 import { ActivitiesModule } from './activities/activities.module';
 import { OrderPricingModule } from './order-pricing/order-pricing.module';
 import { InvoiceModule } from './invoice/invoice.module';
-import dataSource from '../db/ormconfig';
+import { dataSourceOptions } from '../db/ormconfig';
+import { TypeOrmModule } from '@nestjs/typeorm';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
-    TypeOrmModule.forRoot(dataSource as any),
+    // PROD
+    TypeOrmModule.forRoot(dataSourceOptions),
     MailerModule.forRoot({
       transport: 'smtps://user@domain.com:pass@smtp.domain.com',
       template: {

@@ -15,7 +15,6 @@ console.log(
 
 export const dataSourceOptions: DataSourceOptions = {
   type: (process.env.MYSQL_TYPE as 'mysql') || 'mysql',
-  driver: 'mysql',
   host: process.env.MYSQL_HOST,
   port: +(process.env.MYSQL_PORT || 3306),
   username: process.env.MYSQL_USER,
