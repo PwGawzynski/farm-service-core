@@ -1,4 +1,6 @@
 version: '3.8'
+name: farmServiceCore
+
 
 services:
   db:
@@ -11,14 +13,14 @@ services:
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_general_ci
     ports:
-      - "3306:33060" # Port 3306 jest eksponowany na hoście
+      - "3306:3306" # Port 3306 jest eksponowany na hoście
     volumes:
       - db_data:/var/lib/mysql
 
   nestjs:
     build:
-      context: ./../../ # Ścieżka do katalogu z aplikacją NestJS
-      dockerfile: Dockerfile # Jeśli masz własny plik Dockerfile dla serwera NestJS
+      context: .. # Ścieżka do katalogu z aplikacją NestJS
+      dockerfile: ../Dockerfile # Jeśli masz własny plik Dockerfile dla serwera NestJS
     restart: always
     platform: linux/amd64
     depends_on:
