@@ -1,0 +1,62 @@
+version: '3.8'
+name: farmServiceCore
+
+
+services:
+  db:
+    image: mysql:latest
+    platform: linux/amd64
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: farm_service_core
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_general_ci
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - internal_network
+
+
+  nestjs:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: development
+    restart: always
+    platform: linux/amd64
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+    ports:
+      - "80:3000"
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - DB_NAME=farm_service_core
+      - MYSQL_PORT=3306
+      - MYSQL_TYPE=mysql
+    env_file:
+      - .env
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
+    # for development
+
+
+volumes:
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /Users/pwgawzynski/WebstormProjects/fs_db_storage
