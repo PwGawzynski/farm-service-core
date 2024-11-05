@@ -12,28 +12,47 @@ services:
       MYSQL_DATABASE: farm_service_core
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_general_ci
-    ports:
-      - "3306:3306" # Port 3306 jest eksponowany na hoście
+    expose:
+      - "3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - internal_network
+
 
   nestjs:
     build:
-      context: .. # Ścieżka do katalogu z aplikacją NestJS
-      dockerfile: ../Dockerfile # Jeśli masz własny plik Dockerfile dla serwera NestJS
+      context: .
+      dockerfile: ./Dockerfile
+      target: production
     restart: always
     platform: linux/amd64
     depends_on:
-      - db # Kontener NestJS zależy od kontenera MySQL
+      - db
     ports:
-      - "80:3000" # Port na którym działa serwer NestJS
+      - "80:3000"
     environment:
-      MYSQL_HOST: db # Host MySQL, który będzie dostępny wewnątrz kontenera NestJS
-      MYSQL_USER: root # Użytkownik MySQL
-      MYSQL_PASSWORD: root # Hasło MySQL
-      MYSQL_DATABASE: farm_service_core # Nazwa bazy danych MySQL
-      MYSQL_PORT: 3306 # Port MySQL
-      MYSQL_TYPE: mysql # Typ bazy danych
+      - MYSQL_HOST=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - DB_NAME=farm_service_core
+      - MYSQL_PORT=3306
+      - MYSQL_TYPE=mysql
+    env_file:
+      - .env
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
+    # for development
+
 
 volumes:
   db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/server_storage/farm-service-core-db
