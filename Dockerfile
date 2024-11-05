@@ -1,34 +1,60 @@
-# Use the official Node.js image as a base image
-FROM node:20.14
+###################
+# BUILD FOR LOCAL DEVELOPMENT
+###################
 
-# Set the working directory inside the container
+FROM node:20.4 As development
+
+# Create app directory
 WORKDIR /usr/src/app
 
-# Copy the package.json and package-lock.json files into the working directory
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY app-env.sh ./
-
-# Run the app-env.sh script to set environment variables
-RUN /bin/bash -c "source app-env.sh"
-
-# Install the dependencies
-RUN npm install
-RUN export NODE_OPTIONS="--max-old-space-size=8192"
-# Copy the rest of the application code into the working directory
 COPY . .
 
-# Build the application
+
+RUN npm i
+
+
+# Use the node user from the image (instead of the root user)
+USER root
+
+CMD ["sleep", "infinity"]
+
+
+
+###################
+# BUILD FOR PRODUCTION
+###################
+
+FROM node:20.4-alpine As build
+
+WORKDIR /usr/src/app
+
+COPY --chown=node:node package*.json ./
+
+# In order to run `npm run build` we need access to the Nest CLI which is a dev dependency. In the previous development stage we ran `npm ci` which installed all dependencies, so we can copy over the node_modules directory from the development image
+COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modules
+
+COPY --chown=node:node . .
+
+# Run the build command which creates the production bundle
 RUN npm run build
 
-# Expose the application port
-EXPOSE 3000
+# Set NODE_ENV environment variable
+ENV NODE_ENV production
 
-# Create a startup script
-RUN echo '#!/bin/bash' > /usr/src/app/start.sh \
-    && echo 'npm run configure:db:prod --name=init' >> /usr/src/app/start.sh \
-    && echo 'npm run start:prod' >> /usr/src/app/start.sh \
-    && chmod +x /usr/src/app/start.sh
+# Running `npm ci` removes the existing node_modules directory and passing in --only=production ensures that only the production dependencies are installed. This ensures that the node_modules directory is as optimized as possible
+RUN npm ci --only=production && npm cache clean --force
 
-# Use the startup script as the container's entry point
-CMD [ "/usr/src/app/start.sh" ]
+USER node
+
+###################
+# PRODUCTION
+###################
+
+FROM node:20.4-alpine As production
+
+# Copy the bundled code from the build stage to the production image
+COPY --chown=node:node --from=build /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node --from=build /usr/src/app/dist ./dist
+
+# Start the server using the production build
+CMD [ "node", "dist/clearsrc/main.js" ]
