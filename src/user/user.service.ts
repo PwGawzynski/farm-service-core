@@ -144,16 +144,15 @@ export class UserService {
     newPersonalData.save();
 
     //TODO pre release implement it
-    await this.mailer.sendsMail({
-      to: newAccount.email,
-      template: 'activateNewAccount',
-      subject: `Welcome on board, let's activate your account`,
-      context: {
-        username: `${newPersonalData.name} ${newPersonalData.surname}`,
-        activateLink: `http://localhost:3006/user/activate/${newAccount.activationCode}`,
-      },
-    });
-
+    // await this.mailer.sendsMail({
+    //   to: newAccount.email,
+    //   template: 'activateNewAccount',
+    //   subject: `Welcome on board, let's activate your account`,
+    //   context: {
+    //     username: `${newPersonalData.name} ${newPersonalData.surname}`,
+    //     activateLink: `http://localhost:3006/user/activate/${newAccount.activationCode}`,
+    //   },
+    // });
     return {
       code: ResponseCode.ProcessedCorrect,
     } as ResponseObject;
